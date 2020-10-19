@@ -41,7 +41,8 @@
 #### 1.4 Remapped Text Manipulating Commands in Normal Mode
 | Shortcut        | Action                                |
 |-----------------|---------------------------------------|
-| `l`             | **undo**                              |
+| `l`             | **undo**															|
+|`ctl+r`|**redo**|
 | `<`             | Un-indent                             |
 | `>`             | Indent                                |
 | `SPACE` `SPACE` | Goto the next placeholder (`<++>`)    |
@@ -64,6 +65,47 @@
 |-----------------|----------------------------------------|
 | `Y`             | Copy selected text to system clipboard |
 
+#### 1.7 Common NVim Commands
+##### 1.7.1 Cursor Movement
+|Shortcut|Action|
+|--------|------|
+|`w`|Jump by start of words|
+|`b`|Jump backwards by words|
+|`0`|Jump to start of line|
+|`$`|Jump to end of line|
+|`ctl+d`|Move down half a page|
+|`ctl+u`|Move up half a page|
+|`}`|Move to next paragraph|
+|`{`|Move to previous paragraph|
+|`gg`|Jump to top of page|
+|`G`|Jump to bottom of page|
+##### 1.7.2 Insert Appending and Editing Text
+|Shortcut|Action|
+|--------|------|
+|`i`|Start insert mode at cursor|
+|`I`|Start insert mode at beginning of line|
+|`a`|Start insert mode after cursor(append)|
+|`A`|Start insert mode at end of line|
+|`o`|Open blank line below current line|
+|`O`|Open blank line above current line|
+|`c`|Delete the marked text and replace(from visual mode)|
+|`cc`|Change entire line|
+|`r [char]`|Replace a single char|
+|`d [movement]`|Delete|
+|`de`|Delete word|
+|`dd`|Delete line|
+|`y`|Copy(Yank) Text|
+|`p`|Paste after cursor|
+|`P`|Paste before cursor|
+|`x`|Delete current Char|
+##### 1.7.3 Find and Replace
+|Shortcut|Action|
+|--------|------|
+|`/[pattern]`|Search for pattern|
+|`?[pattern]`|Search backwards for pattern|
+|`n`|Repeat search in same direction|
+|`N`|Repeat search in opposite direction|
+|`:s/[old]/[new]/gn`|Replace all old with new through file|
 
 ### 2 Window Management
 #### 2.1 Creating Window Through Split Screen

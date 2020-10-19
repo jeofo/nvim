@@ -1,6 +1,9 @@
-if empty(glob("~/.config/nvim/autoload/plug.vim"))
-	silent "!curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
-				\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+" ====================
+" === Editor Setup ===
+" ====================
+if empty(glob('~/.config/nvim/autoload/plug.vim'))
+	silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
+				\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
@@ -9,16 +12,11 @@ endif
 " === Create a _machine_specific.vim file to adjust machine specific stuff, like python interpreter location
 " ===
 let has_machine_specific_file = 1
-if empty(glob("~/.config/nvim/_machine_specific.vim"))
+if empty(glob('~/.config/nvim/_machine_specific.vim'))
 	let has_machine_specific_file = 0
 	silent! exec "!cp ~/.config/nvim/default_configs/_machine_specific_default.vim ~/.config/nvim/_machine_specific.vim"
 endif
-source $XDG_CONFIG_HOME/nvim/_machine_specific.vim
-
-
-" ====================
-" === Editor Setup ===
-" ====================
+source ~/.config/nvim/_machine_specific.vim
 " ===
 " === System
 " ===
@@ -30,7 +28,6 @@ set autochdir
 " === Editor behavior
 " ===
 set number
-set relativenumber
 set cursorline
 set hidden
 set noexpandtab
@@ -149,10 +146,6 @@ vnoremap <LEADER>tt :s/    /\t/g
 " Folding
 noremap <silent> <LEADER>o za
 
-" Open up lazygit
-noremap \g :Git 
-noremap <c-g> :tabe<CR>:-tabmove<CR>:term lazygit<CR>
-" nnoremap <c-n> :tabe<CR>:-tabmove<CR>:term lazynpm<CR>
 
 
 " ===
@@ -192,7 +185,7 @@ noremap <C-U> 5<C-y>
 noremap <C-E> 5<C-e>
 
 
-source $XDG_CONFIG_HOME/nvim/cursor.vim
+source ~/.config/nvim/cursor.vim
 
 " ===
 " === Insert Mode Cursor Movement
@@ -240,10 +233,10 @@ noremap sn :set nosplitright<CR>:vsplit<CR>:set splitright<CR>
 noremap si :set splitright<CR>:vsplit<CR>
 
 " Resize splits with arrow keys
-noremap <up> :res +5<CR>
-noremap <down> :res -5<CR>
-noremap <left> :vertical resize-5<CR>
-noremap <right> :vertical resize+5<CR>
+noremap <up> :res -5<CR>
+noremap <down> :res +5<CR>
+noremap <left> :vertical resize+5<CR>
+noremap <right> :vertical resize-5<CR>
 
 " Place the two screens up and down
 noremap sh <C-w>t<C-w>K
@@ -363,12 +356,21 @@ call plug#begin('~/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
+"Markdown
+Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+Plug 'dhruvasagar/vim-table-mode', { 'on': 'TableModeToggle', 'for': ['text', 'markdown', 'vim-plug'] }
 
 
 
 call plug#end()
-set re=0
+""" Plugin Configs
+"Markdown
+let g:instant_markdown_autostart = 0
 
+
+
+
+set re=0
 " experimental
 set lazyredraw
 "set regexpengine=1
