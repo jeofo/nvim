@@ -151,3 +151,11 @@ Use the arrow keys to resize the current window.
 | Shortcut    | Action                                                      |
 |-------------|-------------------------------------------------------------|
 | `Ctrl` `n`  | Escape from terminal input mode                             |
+## Plugin Setups
+### Instant Markdown Preview
+Install the mini-server by running:
+```
+    [sudo] npm -g install instant-markdown-d
+    or
+    pip install --user smdv
+ ```
