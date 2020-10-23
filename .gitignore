@@ -1,8 +1,7 @@
 *.swp
-.DS_Store
+ns/
+autoload/
 tmp/
-plugged/
 .netrwhist
 _machine_specific.vim
 .vim-bookmarks
-
