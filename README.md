@@ -82,8 +82,8 @@
 ##### 1.7.2 Insert Appending and Editing Text
 |Shortcut|Action|
 |--------|------|
-|`i`|Start insert mode at cursor|
-|`I`|Start insert mode at beginning of line|
+|`k`|Start insert mode at cursor|
+|`K`|Start insert mode at beginning of line|
 |`a`|Start insert mode after cursor(append)|
 |`A`|Start insert mode at end of line|
 |`o`|Open blank line below current line|
