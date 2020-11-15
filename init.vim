@@ -6,7 +6,9 @@ if empty(glob('~/.config/nvim/autoload/plug.vim'))
 				\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
-
+if empty(glob('~/.config/nvim/plugged'))
+	silent !mkdir plugged
+endif
 " ===
 " === Editor behavior
 " ===
