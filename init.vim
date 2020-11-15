@@ -114,7 +114,7 @@ nnoremap > >>
 
 " Folding
 noremap <silent> <LEADER>o za
-
+ 
 
 
 " ===
@@ -311,6 +311,8 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 call plug#end()
 
+" AutoComplete
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
 """ Plugin Configs
 "Markdown

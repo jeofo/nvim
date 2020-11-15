@@ -82,8 +82,8 @@
 ##### 1.7.2 Insert Appending and Editing Text
 |Shortcut|Action|
 |--------|------|
-|`i`|Start insert mode at cursor|
-|`I`|Start insert mode at beginning of line|
+|`k`|Start insert mode at cursor|
+|`K`|Start insert mode at beginning of line|
 |`a`|Start insert mode after cursor(append)|
 |`A`|Start insert mode at end of line|
 |`o`|Open blank line below current line|
@@ -158,4 +158,14 @@ Install the mini-server by running:
     [sudo] npm -g install instant-markdown-d
     or
     pip install --user smdv
- ```
+```
+
+### [rnvimr - file browser](https://github.com/kevinhwang91/rnvimr)
+Make sure you have ranger installed
+Press `R` to open Ranger (file selector)
+ And Within rnvimr (ranger), you can:
+ | Shortcut   | Action                             |
+ |------------|------------------------------------|
+ | `Ctrl` `t` | Open the file in a new tab         |
+ | `Ctrl` `x` | Split up and down with the file    |
+ | `Ctrl` `v` | Split left and right with the file |

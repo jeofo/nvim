@@ -1,8 +1,6 @@
 *.swp
-.DS_Store
-view/
+ns/
 plugged/
-sessions/
 autoload/
 tmp/
 .netrwhist
