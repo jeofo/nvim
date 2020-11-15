@@ -313,9 +313,6 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 call plug#end()
 
-" AutoComplete
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-
 """ Plugin Configs
 "Markdown
 let g:instant_markdown_autostart = 0
@@ -374,4 +371,5 @@ omap ac <Plug>(coc-classobj-a)
 nnoremap <silent> <space>y :<C-u>CocList -A --normal yank<cr>
 nmap <silent> gd <Plug>(coc-definition)
 nmap <silent> gy <Plug>(coc-type-definition)
+
 colorscheme dracula
