@@ -9,6 +9,7 @@ endif
 if empty(glob('~/.config/nvim/plugged'))
 	silent !mkdir plugged
 endif
+
 " ===
 " === Editor behavior
 " ===
@@ -348,19 +349,7 @@ function! s:check_back_space() abort
 endfunction
 
 let g:coc_snippet_next = '<tab>'
-xmap <leader>x  <Plug>(coc-convert-snippet)
-
-inoremap <silent><expr> <c-space> coc#refresh()
-inoremap <silent><expr> <c-o> coc#refresh()
-function! Show_documentation()
-	call CocActionAsync('highlight')
-	if (index(['vim','help'], &filetype) >= 0)
-		execute 'h '.expand('<cword>')
-	else
-		call CocAction('doHover')
-	endif
-endfunction
-nnoremap <LEADER>h :call Show_documentation()<CR>
+xmap <leader>x  <Plug>(coc-convergit-snippet)
 nnoremap <c-c> :CocCommand<CR>
 
 colorscheme dracula
