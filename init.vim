@@ -7,23 +7,6 @@ if empty(glob('~/.config/nvim/autoload/plug.vim'))
 	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
-
-" ===
-" === Create a _machine_specific.vim file to adjust machine specific stuff, like python interpreter location
-" ===
-let has_machine_specific_file = 1
-if empty(glob('~/.config/nvim/_machine_specific.vim'))
-	let has_machine_specific_file = 0
-	silent! exec "!cp ~/.config/nvim/default_configs/_machine_specific_default.vim ~/.config/nvim/_machine_specific.vim"
-endif
-source ~/.config/nvim/_machine_specific.vim
-" ===
-" === System
-" ===
-"set clipboard=unnamedplus
-let &t_ut=''
-set autochdir
-
 " ===
 " === Editor behavior
 " ===
@@ -63,7 +46,6 @@ set lazyredraw "same as above
 set visualbell
 silent !mkdir -p ~/.config/nvim/tmp/backup
 silent !mkdir -p ~/.config/nvim/tmp/undo
-"silent !mkdir -p ~/.config/nvim/tmp/sessions
 set backupdir=~/.config/nvim/tmp/backup,.
 set directory=~/.config/nvim/tmp/backup,.
 if has('persistent_undo')
@@ -113,9 +95,6 @@ noremap Q :q<CR>
 noremap <C-q> :qa<CR>
 noremap S :w<CR>
 
-" Open the vimrc file anytime
-noremap <LEADER> rc :e ~/.config/nvim/init.vim<CR>
-
 " Undo operations
 noremap l u
 
@@ -132,16 +111,6 @@ vnoremap Y "+y
 " Indentation
 nnoremap < <<
 nnoremap > >>
-
-" Search
-noremap <LEADER><CR> :nohlsearch<CR>
-
-" Adjacent duplicate words
-noremap <LEADER>dw /\(\<\w\+\>\)\_s*\1
-
-" Space to Tab
-nnoremap <LEADER>tt :%s/    /\t/g
-vnoremap <LEADER>tt :s/    /\t/g
 
 " Folding
 noremap <silent> <LEADER>o za
@@ -263,18 +232,10 @@ noremap ti :+tabnext<CR>
 noremap tmn :-tabmove<CR>
 noremap tmi :+tabmove<CR>
 
-" auto spell
-autocmd BufRead,BufNewFile *.md setlocal spell
-
 
 " ===
 " === Other useful stuff
 " ===
-" Open a new instance of st with the cwd
-nnoremap \t :tabe<CR>:-tabmove<CR>:term sh -c 'st'<CR><C-\><C-N>:q<CR>
-
-" Move the next character to the end of the line with ctrl+9
-inoremap <C-u> <ESC>lx$p
 
 " Opening a terminal window
 noremap <LEADER>/ :set splitbelow<CR>:split<CR>:res +10<CR>:term<CR>
@@ -288,24 +249,13 @@ noremap <LEADER>sc :set spell!<CR>
 " Press ` to change case (instead of ~)
 noremap ` ~
 
-noremap <C-c> zz
-
-" Auto change directory to current dir
-autocmd BufEnter * silent! lcd %:p:h
-
-" Call figlet
-noremap tx :r !figlet
+noremap <C-s> ZZ
 
 " find and replace
-noremap \s :%s//g<left><left>
+noremap \s :%s//<left>
 
 " set wrap
 noremap <LEADER>sw :set wrap<CR>
-
-" press f10 to show hlgroup
-map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
-\ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-\ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
 " Compile function
 noremap r :call CompileRunGcc()<CR>
@@ -358,39 +308,12 @@ Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
 "Markdown
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
-Plug 'dhruvasagar/vim-table-mode', { 'on': 'TableModeToggle', 'for': ['text', 'markdown', 'vim-plug'] }
-
-
-
 call plug#end()
 """ Plugin Configs
 "Markdown
 let g:instant_markdown_autostart = 0
-
-
-
-
 set re=0
 " experimental
 set lazyredraw
-"set regexpengine=1
 
 colorscheme dracula
-"color one
-"color gruvbox
-"let ayucolor="light"
-"color ayu
-"color xcodelighthc
-"set background=light
-"set cursorcolumn
-
-"hi NonText ctermfg=gray guifg=grey10
-"hi SpecialKey ctermfg=blue guifg=grey70
-
-
-exec "nohlsearch"
-
-if has_machine_specific_file == 0
-	exec "e ~/.config/nvim/_machine_specific.vim"
-endif
-
