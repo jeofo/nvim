@@ -17,6 +17,7 @@ set number
 set cursorline
 set hidden
 set noexpandtab
+set relativenumber
 set tabstop=2
 set shiftwidth=2
 set softtabstop=2
@@ -205,8 +206,8 @@ noremap sn :set nosplitright<CR>:vsplit<CR>:set splitright<CR>
 noremap si :set splitright<CR>:vsplit<CR>
 
 " Resize splits with arrow keys
-noremap <up> :res -5<CR>
-noremap <down> :res +5<CR>
+noremap <up> :res +5<CR>
+noremap <down> :res -5<CR>
 noremap <left> :vertical resize+5<CR>
 noremap <right> :vertical resize-5<CR>
 
@@ -245,6 +246,9 @@ noremap <LEADER>/ :set splitbelow<CR>:split<CR>:res +10<CR>:term<CR>
 
 " Press space twice to jump to the next '<++>' and edit it
 noremap <LEADER><LEADER> <Esc>/<++><CR>:nohlsearch<CR>c4l
+
+" Set relative number
+noremap <LEADER>sr :set relativenumber!<CR>
 
 " Spelling Check with <space>sc
 noremap <LEADER>sc :set spell!<CR>
@@ -312,7 +316,11 @@ Plug 'dracula/vim', { 'as': 'dracula' }
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 "Markdown
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+"Directory
+Plug 'preservim/nerdtree'
 call plug#end()
+
+
 
 """ Plugin Configs
 "Markdown
@@ -320,13 +328,17 @@ let g:instant_markdown_autostart = 0
 set re=0
 " experimental
 set lazyredraw
-
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+noremap \t :NERDTreeToggle<CR>
+let NERDTreeMenuDown = 'e'
+let NERDTreeMenuUp = 'u'
+let NERDTreeMapUpdir = 'a'
+let NERDTreeMapOpenExpl = 'f'
 
 " ===
 " === coc.nvim
 " ===
 let g:coc_global_extensions = [
-	\ 'coc-snippets',
 	\ 'coc-pairs',
 	\ 'coc-css',
 	\ 'coc-html',
@@ -336,7 +348,8 @@ let g:coc_global_extensions = [
 	\ 'coc-eslint', 
 	\ 'coc-python',
 	\ 'coc-syntax',
-	\ 'coc-tsserver']
+	\ 'coc-tsserver',
+	\ 'coc-snippets']
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? coc#_select_confirm() :
       \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
@@ -347,9 +360,6 @@ function! s:check_back_space() abort
   let col = col('.') - 1
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
-
-let g:coc_snippet_next = '<tab>'
-xmap <leader>x  <Plug>(coc-convergit-snippet)
 nnoremap <c-c> :CocCommand<CR>
 
 colorscheme dracula

@@ -147,6 +147,17 @@ Use the arrow keys to resize the current window.
 | `t` `m` `n` | Move tab left    |
 | `t` `m` `i` | Move tab right   |
 
+### NerdTree
+| Shortcut    | Action                      |
+|-------------|-----------------------------|
+| `\t`        | Toggle NerdTree             |
+| `t` `enter` | Open in new tab             |
+| `T` `enter` | Open in new tab silently    |
+| `C`         | Change root to selected dir |
+| `a`         | Move tree root up a dir     |
+| `r`         | Refresh cursor dir          |
+| `f`         | Explore directory           |
+
 ### 4 Terminal Keyboard Shortcuts
 | Shortcut    | Action                                                      |
 |-------------|-------------------------------------------------------------|
@@ -160,12 +171,13 @@ Install the mini-server by running:
     pip install --user smdv
 ```
 
-### [rnvimr - file browser](https://github.com/kevinhwang91/rnvimr)
-Make sure you have ranger installed
-Press `R` to open Ranger (file selector)
- And Within rnvimr (ranger), you can:
- | Shortcut   | Action                             |
- |------------|------------------------------------|
- | `Ctrl` `t` | Open the file in a new tab         |
- | `Ctrl` `x` | Split up and down with the file    |
- | `Ctrl` `v` | Split left and right with the file |
+
+
+
+
+
+
+
+
+
+
