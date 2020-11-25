@@ -256,13 +256,18 @@ noremap <LEADER>sc :set spell!<CR>
 " Press ` to change case (instead of ~)
 noremap ` ~
 
+" Control+S to save and quit
 noremap <C-s> ZZ
 
 " find and replace
 noremap \s :%s//<left>
 
-" set wrap
-noremap <LEADER>sw :set wrap<CR>
+" J for redo
+noremap j <C-R>
+
+
+" Clear Search
+noremap <LEADER>\ :set nohlsearch!<CR> 
 
 " Compile function
 noremap r :call CompileRunGcc()<CR>
@@ -318,6 +323,8 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
+"Surround
+Plug 'tpope/vim-surround'
 call plug#end()
 
 
