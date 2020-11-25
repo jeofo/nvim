@@ -354,8 +354,11 @@ let g:coc_global_extensions = [
 	\ 'coc-prettier',
 	\ 'coc-eslint', 
 	\ 'coc-python',
+	\ 'coc-ccls',
+	\ 'coc-java',
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
+	\ 'coc-flutter',
 	\ 'coc-snippets']
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? coc#_select_confirm() :
