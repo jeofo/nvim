@@ -325,6 +325,9 @@ Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 Plug 'preservim/nerdtree'
 "Surround
 Plug 'tpope/vim-surround'
+"Dart Vim Plug
+Plug 'dart-lang/dart-vim-plugin'
+
 call plug#end()
 
 
