@@ -1,12 +1,12 @@
 " ====================
 " === Editor Setup ===
 " ====================
-if empty(glob('~/.config/nvim/autoload/plug.vim'))
-	silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
+if empty(glob('$HOME/.config/nvim/autoload/plug.vim'))
+	silent !curl -fLo $HOME/.config/nvim/autoload/plug.vim --create-dirs
 				\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
-if empty(glob('~/.config/nvim/plugged'))
+if empty(glob('$HOME/.config/nvim/plugged'))
 	silent !mkdir plugged
 endif
 
@@ -48,13 +48,13 @@ set completeopt=longest,noinsert,menuone,noselect,preview
 set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
-silent !mkdir -p ~/.config/nvim/tmp/backup
-silent !mkdir -p ~/.config/nvim/tmp/undo
-set backupdir=~/.config/nvim/tmp/backup,.
-set directory=~/.config/nvim/tmp/backup,.
+silent !mkdir -p $HOME/.config/nvim/tmp/backup
+silent !mkdir -p $HOME/.config/nvim/tmp/undo
+set backupdir=$HOME/.config/nvim/tmp/backup,.
+set directory=$HOME/.config/nvim/tmp/backup,.
 if has('persistent_undo')
 	set undofile
-	set undodir=~/.config/nvim/tmp/undo,.
+	set undodir=$HOME/.config/nvim/tmp/undo,.
 endif
 set colorcolumn=100
 set updatetime=100
@@ -158,7 +158,7 @@ noremap <C-U> 5<C-y>
 noremap <C-E> 5<C-e>
 
 
-source ~/.config/nvim/cursor.vim
+source $HOME/.config/nvim/cursor.vim
 
 " ===
 " === Insert Mode Cursor Movement
@@ -253,8 +253,8 @@ noremap <LEADER>sr :set relativenumber!<CR>
 " Spelling Check with <space>sc
 noremap <LEADER>sc :set spell!<CR>
 
-" Press ` to change case (instead of ~)
-noremap ` ~
+" Press ` to change case (instead of $HOME)
+noremap ` $HOME
 
 " Control+S to save and quit
 noremap <C-s> ZZ
@@ -314,7 +314,7 @@ endfunc
 " === Install Plugins with Vim-Plug
 " ===
 
-call plug#begin('~/.config/nvim/plugged')
+call plug#begin('$HOME/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
@@ -370,7 +370,7 @@ inoremap <silent><expr> <TAB>
 
 function! s:check_back_space() abort
   let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
+  return !col || getline('.')[col - 1]  =$HOME# '\s'
 endfunction
 nnoremap <c-c> :CocCommand<CR>
 
