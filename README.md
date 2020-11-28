@@ -145,6 +145,17 @@ Use the arrow keys to resize the current window.
 | `t` `m` `n` | Move tab left    |
 | `t` `m` `i` | Move tab right   |
 
+### NerdTree
+| Shortcut    | Action                      |
+|-------------|-----------------------------|
+| `\t`        | Toggle NerdTree             |
+| `t` `enter` | Open in new tab             |
+| `T` `enter` | Open in new tab silently    |
+| `C`         | Change root to selected dir |
+| `a`         | Move tree root up a dir     |
+| `r`         | Refresh cursor dir          |
+| `f`         | Explore directory           |
+
 ### 4 Terminal Keyboard Shortcuts
 | Shortcut    | Action                                                      |
 |-------------|-------------------------------------------------------------|
@@ -158,3 +169,16 @@ Install the mini-server by running:
     pip install --user smdv
 ```
 
+<<<<<<< HEAD
+=======
+
+
+
+
+
+
+
+
+
+
+>>>>>>> c2c41c33eace3d368f26b1430ed88cab3d080adb
