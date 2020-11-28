@@ -29,20 +29,21 @@
 | `Ctrl` `u` | Move the view port up 5 lines without moving the cursor   | `Ctrl` `y` |
 | `Ctrl` `e` | Move the view port down 5 lines without moving the cursor | `Ctrl` `e` |
 | `h`        | Move to the end of this word                              | `e`        |
-| `W`        | Move cursor five words forward                            | `5w`       |
+| `w`        | Move cursor one word forward                              | `w`       |
+| `b`        | Move cursor one word backwards                            | `b`       |
+| `W`        | Move cursor five words forward                             | `5w`       |
 | `B`        | Move cursor five words forward                            | `5b`       |
 
 #### 1.3 Remapped Insert Mode Keys
 | Shortcut   | Action                                                               |
 |------------|----------------------------------------------------------------------|
 | `Ctrl` `a` | Move cursor to the end of the line                                   |
-| `Ctrl` `u` | Move the character on the right of the cursor to the end of the line |
 
 #### 1.4 Remapped Text Manipulating Commands in Normal Mode
 | Shortcut        | Action                                |
 |-----------------|---------------------------------------|
 | `l`             | **undo**															|
-|`ctl+r`|**redo**|
+|`ctl+r`          |**redo**                               |
 | `<`             | Un-indent                             |
 | `>`             | Indent                                |
 | `SPACE` `SPACE` | Goto the next placeholder (`<++>`)    |
@@ -52,12 +53,9 @@
 |-----------------|------------------------------------------------|
 | `r`             | **Compile/Run the current file**               |
 | `SPACE` `s` `c` | Toggle spell suggestion a                      |
-| `SPACE` `d` `w` | Find adjacent duplicated word                  |
-| `SPACE` `t` `t` | Convert every 4 Spaces to a tab                |
 | `SPACE` `o`     | Fold                                           |
 | `SPACE` `-`     | Previous quick-fix position                    |
 | `SPACE` `+`     | Next quick-fix position                        |
-| `\` `p`         | Show the path of the current file              |
 | `SPACE` `/`     | Create a new terminal below the current window |
 
 #### 1.6 Remapped Commands in Visual Mode
@@ -160,12 +158,3 @@ Install the mini-server by running:
     pip install --user smdv
 ```
 
-### [rnvimr - file browser](https://github.com/kevinhwang91/rnvimr)
-Make sure you have ranger installed
-Press `R` to open Ranger (file selector)
- And Within rnvimr (ranger), you can:
- | Shortcut   | Action                             |
- |------------|------------------------------------|
- | `Ctrl` `t` | Open the file in a new tab         |
- | `Ctrl` `x` | Split up and down with the file    |
- | `Ctrl` `v` | Split left and right with the file |

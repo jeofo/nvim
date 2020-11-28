@@ -117,6 +117,7 @@ nnoremap > >>
 
 " Folding
 noremap <silent> <LEADER>o za
+
  
 
 
@@ -271,7 +272,6 @@ func! CompileRunGcc()
 		set splitbelow
 		exec "!g++ -std=c++11 % -Wall -o %<"
 		:sp
-		:res -15
 		:term ./%<
 	elseif &filetype == 'java'
 		exec "!javac %"
