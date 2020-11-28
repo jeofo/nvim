@@ -1,10 +1,13 @@
 """""" 
 "Manual Editor Setup"
 
-"mkdir 
+"mkdir autoload
 "wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
-"autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 "mkdir plugged
+":PlugInstall
+"
+"Windows Symlink
+"mklink /D $HOME/AppData/Local/nvim $HOME/.config/nvim
 
 " ===
 " === Editor behavior
