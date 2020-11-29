@@ -3,8 +3,11 @@
 
 "mkdir autoload
 "wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
-"autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 "mkdir plugged
+":PlugInstall
+"
+"Windows Symlink
+"mklink /D $HOME/AppData/Local/nvim $HOME/.config/nvim
 
 
 source $HOME/.config/nvim/_machine_specific.vim
@@ -117,6 +120,7 @@ nnoremap > >>
 
 " Folding
 noremap <silent> <LEADER>o za
+
  
 
 
@@ -279,7 +283,6 @@ func! CompileRunGcc()
 		set splitbelow
 		exec "!g++ -std=c++11 % -Wall -o %<"
 		:sp
-		:res -15
 		:term ./%<
 	elseif &filetype == 'java'
 		exec "!javac %"
