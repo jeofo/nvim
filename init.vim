@@ -1,10 +1,13 @@
 """""" 
 "Manual Editor Setup"
 
-"mkdir 
+"mkdir autoload
 "wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
 "autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 "mkdir plugged
+
+
+source $HOME/.config/nvim/_machine_specific.vim
 
 " ===
 " === Editor behavior
@@ -249,8 +252,8 @@ noremap <LEADER>sr :set relativenumber!<CR>
 " Spelling Check with <space>sc
 noremap <LEADER>sc :set spell!<CR>
 
-" Press ` to change case (instead of $HOME)
-noremap ` $HOME
+" Press ` to change case (instead of ~)
+noremap ` ~
 
 " Control+S to save and quit
 noremap <C-s> ZZ
@@ -366,7 +369,7 @@ inoremap <silent><expr> <TAB>
 
 function! s:check_back_space() abort
   let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =$HOME# '\s'
+  return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
 nnoremap <c-c> :CocCommand<CR>
 
