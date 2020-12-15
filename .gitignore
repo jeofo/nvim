@@ -1,7 +1,7 @@
 *.swp
 ns/
-plugged/
-autoload/
+plugged/*
+autoload/*
 tmp/
 .netrwhist
 _machine_specific.vim

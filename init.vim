@@ -1,14 +1,16 @@
-" ====================
-" === Editor Setup ===
-" ====================
-if empty(glob('~/.config/nvim/autoload/plug.vim'))
-	silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
-				\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-endif
-if empty(glob('~/.config/nvim/plugged'))
-	silent !mkdir plugged
-endif
+"""""" 
+"Manual Editor Setup"
+
+"mkdir autoload
+"wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
+"mkdir plugged
+":PlugInstall
+"
+"Windows Symlink
+"mklink /D $HOME/AppData/Local/nvim $HOME/.config/nvim
+
+
+source $HOME/.config/nvim/_machine_specific.vim
 
 " ===
 " === Editor behavior
@@ -48,13 +50,13 @@ set completeopt=longest,noinsert,menuone,noselect,preview
 set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
-silent !mkdir -p ~/.config/nvim/tmp/backup
-silent !mkdir -p ~/.config/nvim/tmp/undo
-set backupdir=~/.config/nvim/tmp/backup,.
-set directory=~/.config/nvim/tmp/backup,.
+silent !mkdir -p $HOME/.config/nvim/tmp/backup
+silent !mkdir -p $HOME/.config/nvim/tmp/undo
+set backupdir=$HOME/.config/nvim/tmp/backup,.
+set directory=$HOME/.config/nvim/tmp/backup,.
 if has('persistent_undo')
 	set undofile
-	set undodir=~/.config/nvim/tmp/undo,.
+	set undodir=$HOME/.config/nvim/tmp/undo,.
 endif
 set colorcolumn=100
 set updatetime=100
@@ -118,6 +120,7 @@ nnoremap > >>
 
 " Folding
 noremap <silent> <LEADER>o za
+
  
 
 
@@ -158,7 +161,7 @@ noremap <C-U> 5<C-y>
 noremap <C-E> 5<C-e>
 
 
-source ~/.config/nvim/cursor.vim
+source $HOME/.config/nvim/cursor.vim
 
 " ===
 " === Insert Mode Cursor Movement
@@ -256,13 +259,18 @@ noremap <LEADER>sc :set spell!<CR>
 " Press ` to change case (instead of ~)
 noremap ` ~
 
+" Control+S to save and quit
 noremap <C-s> ZZ
 
 " find and replace
 noremap \s :%s//<left>
 
-" set wrap
-noremap <LEADER>sw :set wrap<CR>
+" J for redo
+noremap j <C-R>
+
+
+" Clear Search
+noremap <LEADER>\ :set nohlsearch!<CR> 
 
 " Compile function
 noremap r :call CompileRunGcc()<CR>
@@ -275,7 +283,6 @@ func! CompileRunGcc()
 		set splitbelow
 		exec "!g++ -std=c++11 % -Wall -o %<"
 		:sp
-		:res -15
 		:term ./%<
 	elseif &filetype == 'java'
 		exec "!javac %"
@@ -309,7 +316,7 @@ endfunc
 " === Install Plugins with Vim-Plug
 " ===
 
-call plug#begin('~/.config/nvim/plugged')
+call plug#begin('$HOME/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
@@ -318,6 +325,11 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
+"Surround
+Plug 'tpope/vim-surround'
+"Dart Vim Plug
+Plug 'dart-lang/dart-vim-plugin'
+
 call plug#end()
 
 
