@@ -7,7 +7,7 @@
 ":PlugInstall
 "
 "Windows Symlink
-"mklink /D $HOME/AppData/Local/nvim $HOME/.config/nvim
+"mklink /D  %HOMEPATH%\.config\nvim %HOMEPATH%\AppData\Local\nvim
 
 
 source $HOME/.config/nvim/_machine_specific.vim
