@@ -375,7 +375,9 @@ let g:coc_global_extensions = [
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
 	\ 'coc-flutter',
-	\ 'coc-snippets']
+	\ 'coc-snippets',
+	\ 'coc-go']
+
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? coc#_select_confirm() :
       \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
