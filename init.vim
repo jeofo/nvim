@@ -1,6 +1,7 @@
 """""" 
 "Manual Editor Setup"
 
+
 "mkdir autoload
 "wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
 "mkdir plugged
@@ -8,6 +9,17 @@
 "
 "Windows Symlink
 "mklink /D  %HOMEPATH%\.config\nvim %HOMEPATH%\AppData\Local\nvim
+
+
+if has('unix')
+	if empty(glob('~/.config/nvim/autoload/plug.vim'))
+		silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
+					\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+		autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+	endif
+endif
+
+
 
 
 source $HOME/.config/nvim/_machine_specific.vim
@@ -52,11 +64,11 @@ set lazyredraw "same as above
 set visualbell
 silent !mkdir -p $HOME/.config/nvim/tmp/backup
 silent !mkdir -p $HOME/.config/nvim/tmp/undo
-set backupdir=$HOME/.config/nvim/tmp/backup,.
-set directory=$HOME/.config/nvim/tmp/backup,.
+set backupdir=$HOME/.config/nvim/tmp/backup
+set directory=$HOME/.config/nvim/tmp/backup
 if has('persistent_undo')
 	set undofile
-	set undodir=$HOME/.config/nvim/tmp/undo,.
+	set undodir=$HOME/.config/nvim/tmp/undo
 endif
 set colorcolumn=100
 set updatetime=100
