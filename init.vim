@@ -1,14 +1,27 @@
 """""" 
 "Manual Editor Setup"
 
+""" Run in Admin Powershell
 
+"cmd /c "mklink /D  %HOMEPATH%\.config\nvim %HOMEPATH%\AppData\Local\nvim"
+"cd $HOME/.config/nvim
 "mkdir autoload
-"wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
 "mkdir plugged
-":PlugInstall
+"cd tmp
+"mkdir backup
+"mkdir undo
+"cd ../autoload
+"wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
+"cd ..
+"New-Item _machine_specific.vim
+
+
+"""Paste into _machine_specific.vim
+"Write-Output "let g:python_host_prog='C:/Users/tydin/AppData/Local/Programs/Python/Python39/python.exe'" | out-file "_machine_specific.vim" -encoding utf8
 "
-"Windows Symlink
-"mklink /D  %HOMEPATH%\.config\nvim %HOMEPATH%\AppData\Local\nvim
+
+
+":PlugInstall
 
 
 if has('unix')
@@ -62,8 +75,10 @@ set completeopt=longest,noinsert,menuone,noselect,preview
 set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
-silent !mkdir -p $HOME/.config/nvim/tmp/backup
-silent !mkdir -p $HOME/.config/nvim/tmp/undo
+if has('unix')
+	silent !mkdir -p $HOME/.config/nvim/tmp/backup
+	silent !mkdir -p $HOME/.config/nvim/tmp/undo
+endif
 set backupdir=$HOME/.config/nvim/tmp/backup
 set directory=$HOME/.config/nvim/tmp/backup
 if has('persistent_undo')
