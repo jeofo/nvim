@@ -33,7 +33,10 @@ if has('unix')
 endif
 
 
-
+if has('win32')
+	set shell=powershell
+	set shellcmdflag=-command
+endif
 
 source $HOME/.config/nvim/_machine_specific.vim
 
@@ -347,7 +350,7 @@ call plug#begin('$HOME/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'neoclide/coc.nvim'
 "Markdown
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
@@ -390,8 +393,7 @@ let g:coc_global_extensions = [
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
 	\ 'coc-flutter',
-	\ 'coc-snippets',
-	\ 'coc-go']
+	\ 'coc-snippets']
 
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? coc#_select_confirm() :

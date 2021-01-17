@@ -169,16 +169,3 @@ Install the mini-server by running:
     pip install --user smdv
 ```
 
-<<<<<<< HEAD
-=======
-
-
-
-
-
-
-
-
-
-
->>>>>>> c2c41c33eace3d368f26b1430ed88cab3d080adb
