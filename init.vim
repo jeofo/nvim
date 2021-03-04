@@ -1,29 +1,3 @@
-"""""" 
-"Manual Editor Setup"
-
-""" Run in Admin Powershell
-
-"cmd /c "mklink /D  %HOMEPATH%\.config\nvim %HOMEPATH%\AppData\Local\nvim"
-"cd $HOME/.config/nvim
-"mkdir autoload
-"mkdir plugged
-"cd tmp
-"mkdir backup
-"mkdir undo
-"cd ../autoload
-"wget https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -O plug.vim
-"cd ..
-"New-Item _machine_specific.vim
-
-
-"""Paste into _machine_specific.vim
-"Write-Output "let g:python_host_prog='C:/Users/tydin/AppData/Local/Programs/Python/Python39/python.exe'" | out-file "_machine_specific.vim" -encoding utf8
-"
-
-
-":PlugInstall
-
-
 if has('unix')
 	if empty(glob('~/.config/nvim/autoload/plug.vim'))
 		silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
@@ -78,6 +52,7 @@ set completeopt=longest,noinsert,menuone,noselect,preview
 set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
+set clipboard=unnamedplus
 if has('unix')
 	silent !mkdir -p $HOME/.config/nvim/tmp/backup
 	silent !mkdir -p $HOME/.config/nvim/tmp/undo
@@ -190,6 +165,10 @@ noremap h e
 noremap <C-U> 5<C-y>
 noremap <C-E> 5<C-e>
 
+" Delete
+nnoremap <leader>d "_d
+xnoremap <leader>d "_d
+xnoremap <leader>p "_dP
 
 source $HOME/.config/nvim/cursor.vim
 
@@ -275,7 +254,7 @@ noremap tmi :+tabmove<CR>
 " ===
 
 " Opening a terminal window
-noremap <LEADER>/ :set splitbelow<CR>:split<CR>:res +10<CR>:term<CR>
+noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
 
 " Press space twice to jump to the next '<++>' and edit it
 noremap <LEADER><LEADER> <Esc>/<++><CR>:nohlsearch<CR>c4l
@@ -315,8 +294,9 @@ func! CompileRunGcc()
 		:sp
 		:term ./%<
 	elseif &filetype == 'java'
-		exec "!javac %"
-		exec "!time java %<"
+		set splitbelow
+		:sp
+		:term javac % && java %
 	elseif &filetype == 'sh'
 		:!time bash %
 	elseif &filetype == 'python'
