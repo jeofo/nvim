@@ -10,10 +10,11 @@ endif
 if has('win32')
 	set shell=powershell
 	set shellcmdflag=-command
+	set shellquote=\"
+	set shellxquote=
 endif
 
 source $HOME/.config/nvim/_machine_specific.vim
-
 " ===
 " === Editor behavior
 " ===
@@ -59,6 +60,7 @@ if has('unix')
 endif
 set backupdir=$HOME/.config/nvim/tmp/backup
 set directory=$HOME/.config/nvim/tmp/backup
+
 if has('persistent_undo')
 	set undofile
 	set undodir=$HOME/.config/nvim/tmp/undo
@@ -77,22 +79,6 @@ let g:neoterm_autoscroll = 1
 autocmd TermOpen term://* startinsert
 tnoremap <C-N> <C-\><C-N>
 tnoremap <C-O> <C-\><C-N><C-O>
-let g:terminal_color_0  = '#000000'
-let g:terminal_color_1  = '#FF5555'
-let g:terminal_color_2  = '#50FA7B'
-let g:terminal_color_3  = '#F1FA8C'
-let g:terminal_color_4  = '#BD93F9'
-let g:terminal_color_5  = '#FF79C6'
-let g:terminal_color_6  = '#8BE9FD'
-let g:terminal_color_7  = '#BFBFBF'
-let g:terminal_color_8  = '#4D4D4D'
-let g:terminal_color_9  = '#FF6E67'
-let g:terminal_color_10 = '#5AF78E'
-let g:terminal_color_11 = '#F4F99D'
-let g:terminal_color_12 = '#CAA9FA'
-let g:terminal_color_13 = '#FF92D0'
-let g:terminal_color_14 = '#9AEDFE'
-
 
 " ===
 " === Basic Mappings
@@ -171,13 +157,10 @@ xnoremap <leader>d "_d
 xnoremap <leader>p "_dP
 
 source $HOME/.config/nvim/cursor.vim
-
 " ===
 " === Insert Mode Cursor Movement
 " ===
 inoremap <C-a> <ESC>A
-
-
 " ===
 " === Command Mode Cursor Movement
 " ===
@@ -255,6 +238,8 @@ noremap tmi :+tabmove<CR>
 
 " Opening a terminal window
 noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
+" Closing a terminal window
+tnoremap <Esc> <C-\><C-n>:q!<CR>
 
 " Press space twice to jump to the next '<++>' and edit it
 noremap <LEADER><LEADER> <Esc>/<++><CR>:nohlsearch<CR>c4l
@@ -279,10 +264,10 @@ noremap j <C-R>
 
 
 " Clear Search
-noremap <LEADER>\ :set nohlsearch!<CR> 
+noremap <LEADER>\ :noh<CR> 
 
 " Compile function
-noremap r :call CompileRunGcc()<CR>
+noremap <LEADER>r :call CompileRunGcc()<CR>
 func! CompileRunGcc()
 	exec "w"
 	if &filetype == 'c'
@@ -302,7 +287,7 @@ func! CompileRunGcc()
 	elseif &filetype == 'python'
 		set splitbelow
 		:sp
-		:term python3 %
+		:term python %
 	elseif &filetype == 'html'
 		silent! exec "!".g:mkdp_browser." % &"
 	elseif &filetype == 'markdown'
@@ -325,7 +310,6 @@ endfunc
 " ===
 " === Install Plugins with Vim-Plug
 " ===
-
 call plug#begin('$HOME/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
@@ -368,7 +352,7 @@ let g:coc_global_extensions = [
 	\ 'coc-lists',
 	\ 'coc-prettier',
 	\ 'coc-eslint', 
-	\ 'coc-python',
+	\ 'coc-pyright',
 	\ 'coc-java',
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
