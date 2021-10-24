@@ -241,8 +241,8 @@ noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
 " Closing a terminal window
 tnoremap <Esc> <C-\><C-n>:q!<CR>
 
-" Press space twice to jump to the next '<++>' and edit it
-noremap <LEADER><LEADER> <Esc>/<++><CR>:nohlsearch<CR>c4l
+" Enter command mode by double clicking space bar
+noremap <LEADER><LEADER> :
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
@@ -262,9 +262,13 @@ noremap \s :%s//<left>
 " J for redo
 noremap j <C-R>
 
-
 " Clear Search
 noremap <LEADER>\ :noh<CR> 
+
+" Quick Comments
+source $HOME/.config/nvim/vcomments.vim
+map gc :call Comment()<CR>
+map gC :call Uncomment()<CR>
 
 " Compile function
 noremap <LEADER>r :call CompileRunGcc()<CR>
@@ -332,11 +336,6 @@ call plug#end()
 "Markdown
 let g:instant_markdown_autostart = 0
 set re=0
-" experimental
-set lazyredraw
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-noremap \t :NERDTreeToggle<CR>
-let NERDTreeMenuDown = 'e'
 let NERDTreeMenuUp = 'u'
 let NERDTreeMapUpdir = 'a'
 let NERDTreeMapOpenExpl = 'f'
