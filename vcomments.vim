@@ -23,3 +23,11 @@ function! Uncomment()
 		silent s:^\"::g
 	endif
 endfunction
+
+function! Toggle()
+	try
+		call Uncomment()
+	catch
+		call Comment()
+	endtry
+endfunction

@@ -102,9 +102,6 @@ noremap K I
 " make Y to copy till the end of the line
 nnoremap Y y$
 
-" Copy to system clipboard
-vnoremap Y "+y
-
 " Indentation
 nnoremap < <<
 nnoremap > >>
@@ -267,8 +264,12 @@ noremap <LEADER>\ :noh<CR>
 
 " Quick Comments
 source $HOME/.config/nvim/vcomments.vim
-map gc :call Comment()<CR>
-map gC :call Uncomment()<CR>
+"map gc :call Comment()<CR>
+"map gx :call Uncomment()<CR>
+map gc :call Toggle()<CR>
+
+" Toggle NERDTree
+noremap <LEADER>t :NERDTreeToggle<CR>
 
 " Compile function
 noremap <LEADER>r :call CompileRunGcc()<CR>
