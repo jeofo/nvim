@@ -5,4 +5,4 @@ plugged/*
 tmp/
 .netrwhist
 .vim-bookmarks
-./_machine_specific.vim
+_machine_specific.vim
