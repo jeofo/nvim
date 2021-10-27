@@ -227,12 +227,12 @@ noremap tmi :+tabmove<CR>
 " ===
 
 " Opening a terminal window
-noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
+noremap <LEADER>/ :set splitright<CR>:vsplit<CR>:term<CR>
 " Closing a terminal window
-tnoremap <Esc> <C-\><C-n>:q!<CR>
+tnoremap <Esc> <C-\><C-n>
 
 " Enter command mode by ctrl+c
-noremap <C-c> :CocCommand
+noremap <C-c> :CocCommand<CR>
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
@@ -247,22 +247,15 @@ noremap ` ~
 noremap <C-s> ZZ
 
 " find and replace
-noremap \s :%s//<left>
+noremap <LEADER>F :%s//<left>
+noremap <LEADER>f /
 
 " J for redo
 noremap j <C-R>
 
 " Clear Search
-noremap <LEADER>\ :noh<CR> 
+map <Esc> :noh<CR> 
 
-" Quick Comments
-source $HOME/.config/nvim/vcomments.vim
-"map gc :call Comment()<CR>
-"map gx :call Uncomment()<CR>
-map gc :call Toggle()<CR>
-
-" Toggle NERDTree
-noremap <LEADER>t :NERDTreeToggle<CR>
 
 " Compile function
 noremap <LEADER>r :call CompileRunGcc()<CR>
@@ -319,18 +312,21 @@ Plug 'neoclide/coc.nvim'
 Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+"git
+Plug 'APZelos/blamer.nvim'
 "Surround
 Plug 'tpope/vim-surround'
 "Dart Vim Plug
 Plug 'dart-lang/dart-vim-plugin'
-"LaTex
-Plug 'lervag/vimtex'
 "Status Line
 Plug 'itchyny/lightline.vim'
 "Rainbow
 Plug 'luochen1990/rainbow'
 "Fuzzy Search
 Plug 'ctrlpvim/ctrlp.vim'
+"Comments
+Plug 'scrooloose/nerdcommenter'
 call plug#end()
 
 if has('win32')
@@ -341,6 +337,14 @@ if has('win32')
 endif
 
 """ Plugin Configs
+"git
+let g:blamer_enabled = 1
+let g:blamer_show_in_visual_modes = 0
+let g:blamer_show_in_insert_modes = 0
+let g:blamer_prefix = ' > '
+"Comments
+vmap <LEADER>a <plug>NERDCommenterToggle
+nmap <LEADER>a <plug>NERDCommenterToggle
 "Rainbow
 let g:rainbow_active = 1
 "Markdown
@@ -352,11 +356,8 @@ let NERDTreeMenuDown='e'
 let NERDTreeMapUpdir = 'a'
 let NERDTreeMapOpenExpl = 'f'
 let NERDTreeMapUpdirKeepOpen = 'F'
-"LaTex
-let g:vimtex_view_general_viewer = 'okular'
-let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
-let g:vimtex_view_general_options_latexmk = '--unique'
-noremap <LEADER>c :VimtexTocOpen<CR>
+" Toggle NERDTree
+noremap <LEADER>t :NERDTreeToggle<CR>
 "CtrlP
 noremap <LEADER><CR> :CtrlPMixed<CR>
 "Lightline
@@ -390,6 +391,15 @@ inoremap <silent><expr> <TAB>
       \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
       \ <SID>check_back_space() ? "\<TAB>" :
       \ coc#refresh()
+
+"   <leader>dd    - Jump to definition of current symbol
+"   <leader>dr    - Jump to references of current symbol
+"   <leader>dj    - Jump to implementation of current symbol
+"   <leader>ds    - Fuzzy search current project symbols
+nmap <silent> <leader>dd <Plug>(coc-definition)
+nmap <silent> <leader>dr <Plug>(coc-references)
+nmap <silent> <leader>dj <Plug>(coc-implementation)
+nnoremap <silent> <leader>ds :<C-u>CocList -I -N --top symbols<CR>
 
 function! s:check_back_space() abort
   let col = col('.') - 1
