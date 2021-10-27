@@ -7,13 +7,6 @@ if has('unix')
 endif
 
 
-if has('win32')
-	set shell=powershell
-	set shellcmdflag=-command
-	set shellquote=\"
-	set shellxquote=
-endif
-
 source $HOME/.config/nvim/_machine_specific.vim
 " ===
 " === Editor behavior
@@ -238,8 +231,8 @@ noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
 " Closing a terminal window
 tnoremap <Esc> <C-\><C-n>:q!<CR>
 
-" Enter command mode by double clicking space bar
-noremap <LEADER><LEADER> :
+" Enter command mode by ctrl+c
+noremap <C-c> :
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
@@ -308,6 +301,8 @@ func! CompileRunGcc()
 		set splitbelow
 		:sp
 		:term go run .
+	elseif &filetype == 'latex'
+		:VimtexCompile
 	endif
 endfunc
 
@@ -328,19 +323,32 @@ Plug 'preservim/nerdtree'
 Plug 'tpope/vim-surround'
 "Dart Vim Plug
 Plug 'dart-lang/dart-vim-plugin'
-
+"LaTex
+Plug 'lervag/vimtex'
 call plug#end()
 
-
+if has('win32')
+	set shell=powershell
+	set shellcmdflag=-command
+	set shellquote=\"
+	set shellxquote=
+endif
 
 """ Plugin Configs
 "Markdown
 let g:instant_markdown_autostart = 0
 set re=0
+"NERDTree
 let NERDTreeMenuUp = 'u'
+let NERDTreeMenuDown='e'
 let NERDTreeMapUpdir = 'a'
 let NERDTreeMapOpenExpl = 'f'
-
+let NERDTreeMapUpdirKeepOpen = 'F'
+"LaTex
+let g:vimtex_view_general_viewer = 'okular'
+let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
+let g:vimtex_view_general_options_latexmk = '--unique'
+noremap <LEADER>c :VimtexTocOpen<CR>
 " ===
 " === coc.nvim
 " ===
@@ -369,6 +377,6 @@ function! s:check_back_space() abort
   let col = col('.') - 1
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
-nnoremap <c-c> :CocCommand<CR>
+nnoremap <LEADER><LEADER> :CocCommand<CR>
 
 colorscheme dracula
