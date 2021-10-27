@@ -1,11 +1,9 @@
-if has('unix')
-	if empty(glob('~/.config/nvim/autoload/plug.vim'))
-		silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
-					\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-		autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-	endif
+if has('win32')
+	set shell=powershell
+	set shellcmdflag=-command
+	set shellquote=\"
+	set shellxquote=
 endif
-
 
 source $HOME/.config/nvim/_machine_specific.vim
 " ===
@@ -47,10 +45,12 @@ set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
 set clipboard=unnamedplus
+
 if has('unix')
 	silent !mkdir -p $HOME/.config/nvim/tmp/backup
 	silent !mkdir -p $HOME/.config/nvim/tmp/undo
 endif
+
 set backupdir=$HOME/.config/nvim/tmp/backup
 set directory=$HOME/.config/nvim/tmp/backup
 
@@ -146,23 +146,11 @@ nnoremap <leader>d "_d
 xnoremap <leader>d "_d
 xnoremap <leader>p "_dP
 
-source $HOME/.config/nvim/cursor.vim
 " ===
 " === Insert Mode Cursor Movement
 " ===
 inoremap <C-a> <ESC>A
-" ===
-" === Command Mode Cursor Movement
-" ===
-cnoremap <C-a> <Home>
-cnoremap <C-e> <End>
-cnoremap <C-p> <Up>
-cnoremap <C-n> <Down>
-cnoremap <C-b> <Left>
-cnoremap <C-f> <Right>
-cnoremap <M-b> <S-Left>
-cnoremap <M-w> <S-Right>
-
+inoremap <C-n> <ESC>N
 
 " ===
 " === Searching
@@ -230,9 +218,6 @@ noremap tmi :+tabmove<CR>
 noremap <LEADER>/ :set splitright<CR>:vsplit<CR>:term<CR>
 " Closing a terminal window
 tnoremap <Esc> <C-\><C-n>
-
-" Enter command mode by ctrl+c
-noremap <C-c> :CocCommand<CR>
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
@@ -317,8 +302,6 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'APZelos/blamer.nvim'
 "Surround
 Plug 'tpope/vim-surround'
-"Dart Vim Plug
-Plug 'dart-lang/dart-vim-plugin'
 "Status Line
 Plug 'itchyny/lightline.vim'
 "Rainbow
@@ -327,14 +310,11 @@ Plug 'luochen1990/rainbow'
 Plug 'ctrlpvim/ctrlp.vim'
 "Comments
 Plug 'scrooloose/nerdcommenter'
+"Language Support
+Plug 'MaxMEllon/vim-jsx-pretty'
+Plug 'pangloss/vim-javascript'
 call plug#end()
 
-if has('win32')
-	set shell=powershell
-	set shellcmdflag=-command
-	set shellquote=\"
-	set shellxquote=
-endif
 
 """ Plugin Configs
 "git
@@ -359,7 +339,7 @@ let NERDTreeMapUpdirKeepOpen = 'F'
 " Toggle NERDTree
 noremap <LEADER>t :NERDTreeToggle<CR>
 "CtrlP
-noremap <LEADER><CR> :CtrlPMixed<CR>
+noremap <LEADER><LEADER> :CtrlPMixed<CR>
 "Lightline
 let g:lightline = {
       \ 'colorscheme': 'wombat',
@@ -386,6 +366,7 @@ let g:coc_global_extensions = [
 	\ 'coc-flutter',
 	\ 'coc-snippets']
 
+
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? coc#_select_confirm() :
       \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
@@ -396,15 +377,12 @@ inoremap <silent><expr> <TAB>
 "   <leader>dr    - Jump to references of current symbol
 "   <leader>dj    - Jump to implementation of current symbol
 "   <leader>ds    - Fuzzy search current project symbols
-nmap <silent> <leader>dd <Plug>(coc-definition)
-nmap <silent> <leader>dr <Plug>(coc-references)
-nmap <silent> <leader>dj <Plug>(coc-implementation)
-nnoremap <silent> <leader>ds :<C-u>CocList -I -N --top symbols<CR>
+nnoremap <leader>l :CocList<cr>
+noremap <C-c> :CocCommand<CR>
 
 function! s:check_back_space() abort
   let col = col('.') - 1
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
-nnoremap <LEADER><LEADER> :
 
 colorscheme dracula
