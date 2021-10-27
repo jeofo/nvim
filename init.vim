@@ -359,6 +359,8 @@ let g:coc_global_extensions = [
 	\ 'coc-java',
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
+	\ 'coc-vimtex',
+	\ 'coc-markdownlint',
 	\ 'coc-flutter',
 	\ 'coc-snippets']
 
@@ -372,6 +374,7 @@ inoremap <silent><expr> <TAB>
 nnoremap <LEADER>l :CocList<cr>
 noremap <LEADER>c :CocCommand<CR>
 nmap <LEADER>rn <Plug>(coc-rename)
+nmap <leader><leader> <Plug>(coc-codeaction)
 
 function! s:check_back_space() abort
   let col = col('.') - 1
