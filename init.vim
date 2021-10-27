@@ -244,8 +244,8 @@ map <Esc> :noh<CR>
 
 
 " Compile function
-noremap <LEADER>r :call CompileRunGcc()<CR>
-func! CompileRunGcc()
+noremap r :call Run()<CR>
+func! Run()
 	exec "w"
 	if &filetype == 'c'
 		exec "!g++ % -o %<"
@@ -322,7 +322,8 @@ let g:rainbow_active = 1
 autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
 autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
 "Comments
-vmap <LEADER>a <plug>NERDCommenterToggle
+let g:NERDCreateDefaultMappings = 0
+vmap <LEADER>a <plug>NERDCommenterTogglel
 nmap <LEADER>a <plug>NERDCommenterToggle
 "NERDTree
 let NERDTreeMenuUp = 'u'
@@ -333,7 +334,7 @@ let NERDTreeMapUpdirKeepOpen = 'F'
 " Toggle NERDTree
 noremap <LEADER>t :NERDTreeToggle<CR>
 "CtrlP
-noremap <LEADER><LEADER> :CtrlPMixed<CR>
+noremap <LEADER><CR> :CtrlPMixed<CR>
 "Lightline
 let g:lightline = {
       \ 'colorscheme': 'wombat',
@@ -345,13 +346,6 @@ let g:lightline = {
 " ===
 " === coc.nvim
 " ===
-function! ShowDocIfNoDiagnostic()
-  if (coc#float#has_float() == 0 && CocHasProvider('hover') == 1)
-    silent call CocActionAsync('doHover')
-  endif
-endfunction
-
-nnoremap <silent>T :call CocAction('doHover')<CR>
 
 let g:coc_global_extensions = [
 	\ 'coc-pairs',
@@ -375,13 +369,9 @@ inoremap <silent><expr> <TAB>
       \ <SID>check_back_space() ? "\<TAB>" :
       \ coc#refresh()
 
-"   <leader>dd    - Jump to definition of current symbol
-"   <leader>dr    - Jump to references of current symbol
-"   <leader>dj    - Jump to implementation of current symbol
-"   <leader>ds    - Fuzzy search current project symbols
-nnoremap <leader>l :CocList<cr>
-noremap <C-c> :CocCommand<CR>
-nmap <Leader>z <Plug>(coc-rename)
+nnoremap <LEADER>l :CocList<cr>
+noremap <LEADER>c :CocCommand<CR>
+nmap <LEADER>rn <Plug>(coc-rename)
 
 function! s:check_back_space() abort
   let col = col('.') - 1
@@ -389,4 +379,3 @@ function! s:check_back_space() abort
 endfunction
 
 colorscheme dracula
-highlight CocFloating ctermbg=8 ctermfg=3

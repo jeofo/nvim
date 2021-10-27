@@ -1,5 +1,11 @@
 {
   "suggest.noselect": false,
+  "suggest.timeout": 2000,
+  "diagnostic.checkCurrentLine": true,
+  "diagnostic.errorSign": "!",
+  "diagnostic.infoSign": ">",
+  "diagnostic.hintSign": ">",
+  "diagnostic.warningSign": "λ",
   "coc.preferences.formatOnSaveFiletypes": [
     "javascript",
     "typescript",
