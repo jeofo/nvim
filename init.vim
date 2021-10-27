@@ -232,7 +232,7 @@ noremap <LEADER>/ :set splitbelow<CR>:split<CR>:term<CR>
 tnoremap <Esc> <C-\><C-n>:q!<CR>
 
 " Enter command mode by ctrl+c
-noremap <C-c> :
+noremap <C-c> :CocCommand
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
@@ -325,6 +325,12 @@ Plug 'tpope/vim-surround'
 Plug 'dart-lang/dart-vim-plugin'
 "LaTex
 Plug 'lervag/vimtex'
+"Status Line
+Plug 'itchyny/lightline.vim'
+"Rainbow
+Plug 'luochen1990/rainbow'
+"Fuzzy Search
+Plug 'ctrlpvim/ctrlp.vim'
 call plug#end()
 
 if has('win32')
@@ -335,6 +341,8 @@ if has('win32')
 endif
 
 """ Plugin Configs
+"Rainbow
+let g:rainbow_active = 1
 "Markdown
 let g:instant_markdown_autostart = 0
 set re=0
@@ -349,6 +357,16 @@ let g:vimtex_view_general_viewer = 'okular'
 let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
 let g:vimtex_view_general_options_latexmk = '--unique'
 noremap <LEADER>c :VimtexTocOpen<CR>
+"CtrlP
+noremap <LEADER><CR> :CtrlPMixed<CR>
+"Lightline
+let g:lightline = {
+      \ 'colorscheme': 'wombat',
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ],
+      \             [ 'readonly', 'filename', 'modified', 'helloworld' ] ]
+      \ },
+      \ }
 " ===
 " === coc.nvim
 " ===
@@ -377,6 +395,6 @@ function! s:check_back_space() abort
   let col = col('.') - 1
   return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
-nnoremap <LEADER><LEADER> :CocCommand<CR>
+nnoremap <LEADER><LEADER> :
 
 colorscheme dracula
