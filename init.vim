@@ -46,6 +46,7 @@ set lazyredraw "same as above
 set visualbell
 set clipboard=unnamedplus
 
+
 if has('unix')
 	silent !mkdir -p $HOME/.config/nvim/tmp/backup
 	silent !mkdir -p $HOME/.config/nvim/tmp/undo
@@ -294,12 +295,10 @@ Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
 Plug 'neoclide/coc.nvim'
 "Markdown
-Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+"Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
-"git
-Plug 'APZelos/blamer.nvim'
 "Surround
 Plug 'tpope/vim-surround'
 "Status Line
@@ -317,19 +316,14 @@ call plug#end()
 
 
 """ Plugin Configs
-"git
-let g:blamer_enabled = 1
-let g:blamer_show_in_visual_modes = 0
-let g:blamer_show_in_insert_modes = 0
-let g:blamer_prefix = ' > '
+"Rainbow
+let g:rainbow_active = 1
+"Language support
+autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
+autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
 "Comments
 vmap <LEADER>a <plug>NERDCommenterToggle
 nmap <LEADER>a <plug>NERDCommenterToggle
-"Rainbow
-let g:rainbow_active = 1
-"Markdown
-let g:instant_markdown_autostart = 0
-set re=0
 "NERDTree
 let NERDTreeMenuUp = 'u'
 let NERDTreeMenuDown='e'
@@ -351,6 +345,14 @@ let g:lightline = {
 " ===
 " === coc.nvim
 " ===
+function! ShowDocIfNoDiagnostic()
+  if (coc#float#has_float() == 0 && CocHasProvider('hover') == 1)
+    silent call CocActionAsync('doHover')
+  endif
+endfunction
+
+nnoremap <silent>T :call CocAction('doHover')<CR>
+
 let g:coc_global_extensions = [
 	\ 'coc-pairs',
 	\ 'coc-css',
@@ -379,6 +381,7 @@ inoremap <silent><expr> <TAB>
 "   <leader>ds    - Fuzzy search current project symbols
 nnoremap <leader>l :CocList<cr>
 noremap <C-c> :CocCommand<CR>
+nmap <Leader>z <Plug>(coc-rename)
 
 function! s:check_back_space() abort
   let col = col('.') - 1
@@ -386,3 +389,4 @@ function! s:check_back_space() abort
 endfunction
 
 colorscheme dracula
+highlight CocFloating ctermbg=8 ctermfg=3
