@@ -194,6 +194,8 @@ noremap sv <C-w>t<C-w>H
 noremap srh <C-w>b<C-w>K
 noremap srv <C-w>b<C-w>H
 
+" Change window to tab
+noremap st <C-w>T
 " Press <SPACE> + q to close the window below the current window
 noremap <LEADER>q <C-w>j:q<CR>
 
@@ -244,7 +246,7 @@ map <Esc> :noh<CR>
 
 
 " Compile function
-noremap r :call Run()<CR>
+noremap <silent>rr :call Run()<CR>
 func! Run()
 	exec "w"
 	if &filetype == 'c'
@@ -280,9 +282,6 @@ func! Run()
 		set splitbelow
 		:sp
 		:term go run .
-	elseif &filetype == 'latex'
-		:VimtexCompile
-	endif
 endfunc
 
 
@@ -295,7 +294,7 @@ Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
 Plug 'neoclide/coc.nvim'
 "Markdown
-"Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
@@ -310,12 +309,19 @@ Plug 'ctrlpvim/ctrlp.vim'
 "Comments
 Plug 'scrooloose/nerdcommenter'
 "Language Support
-Plug 'MaxMEllon/vim-jsx-pretty'
-Plug 'pangloss/vim-javascript'
+Plug 'MaxMEllon/vim-jsx-pretty', {'for': ['javascript','typescript','javascriptreact','typescriptreact']}
+Plug 'pangloss/vim-javascript',{'for': ['javascript','typescript','javascriptreact','typescriptreact']}
+"Icons
+Plug 'ryanoasis/vim-devicons'
 call plug#end()
 
 
 """ Plugin Configs
+"Latex
+let g:vimtex_view_general_viewer = 'okular'
+let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
+let g:vimtex_view_general_options_latexmk = '--unique'
+noremap <LEADER>L :VimtexTocOpen<CR>
 "Rainbow
 let g:rainbow_active = 1
 "Language support
@@ -323,7 +329,7 @@ autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
 autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
 "Comments
 let g:NERDCreateDefaultMappings = 0
-vmap <LEADER>a <plug>NERDCommenterTogglel
+vmap <LEADER>a <plug>NERDCommenterToggle
 nmap <LEADER>a <plug>NERDCommenterToggle
 "NERDTree
 let NERDTreeMenuUp = 'u'
@@ -361,6 +367,7 @@ let g:coc_global_extensions = [
 	\ 'coc-tsserver',
 	\ 'coc-vimtex',
 	\ 'coc-markdownlint',
+	\ 'coc-vimtex',
 	\ 'coc-flutter',
 	\ 'coc-snippets']
 
