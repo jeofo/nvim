@@ -298,6 +298,8 @@ Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
 "Directory
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
+"Version Control
+Plug 'tpope/vim-fugitive'
 "Surround
 Plug 'tpope/vim-surround'
 "Status Line
