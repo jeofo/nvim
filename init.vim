@@ -246,7 +246,7 @@ map <Esc> :noh<CR>
 
 
 " Compile function
-noremap <silent>rr :call Run()<CR>
+noremap <LEADER>rr :call Run()<CR>
 func! Run()
 	exec "w"
 	if &filetype == 'c'
@@ -260,7 +260,11 @@ func! Run()
 	elseif &filetype == 'java'
 		set splitbelow
 		:sp
-		:term javac % && java %
+		if has('win32')
+			:term javac % ; java %
+		else
+			:term javac % && java % 
+		endif
 	elseif &filetype == 'sh'
 		:!time bash %
 	elseif &filetype == 'python'
@@ -282,6 +286,7 @@ func! Run()
 		set splitbelow
 		:sp
 		:term go run .
+	endif
 endfunc
 
 
