@@ -270,7 +270,7 @@ func! Run()
 	elseif &filetype == 'html'
 		silent! exec "!".g:mkdp_browser." % &"
 	elseif &filetype == 'markdown'
-		exec "InstantMarkdownPreview"
+		exec "MarkdownPreviewToggle"
 	elseif &filetype == 'tex'
 		silent! exec "VimtexStop"
 		silent! exec "VimtexCompile"
@@ -282,6 +282,7 @@ func! Run()
 		set splitbelow
 		:sp
 		:term go run .
+	endif
 endfunc
 
 
@@ -294,7 +295,7 @@ Plug 'dracula/vim', { 'as': 'dracula' }
 "Auto-Complete
 Plug 'neoclide/coc.nvim'
 "Markdown
-Plug 'suan/vim-instant-markdown', {'for': 'markdown'}
+Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install'  }
 "Directory
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
@@ -319,6 +320,8 @@ call plug#end()
 
 
 """ Plugin Configs
+"Markdown
+
 "Latex
 let g:vimtex_view_general_viewer = 'okular'
 let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
