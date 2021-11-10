@@ -320,6 +320,8 @@ Plug 'MaxMEllon/vim-jsx-pretty', {'for': ['javascript','typescript','javascriptr
 Plug 'pangloss/vim-javascript',{'for': ['javascript','typescript','javascriptreact','typescriptreact']}
 "Icons
 Plug 'ryanoasis/vim-devicons'
+"Latex
+Plug 'lervag/vimtex',{'for':'tex'}
 call plug#end()
 
 
@@ -330,6 +332,7 @@ call plug#end()
 let g:vimtex_view_general_viewer = 'okular'
 let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
 let g:vimtex_view_general_options_latexmk = '--unique'
+let g:vimtex_compiler_latexmk_engines ="pdflatex"
 noremap <LEADER>L :VimtexTocOpen<CR>
 "Rainbow
 let g:rainbow_active = 1
@@ -374,7 +377,6 @@ let g:coc_global_extensions = [
 	\ 'coc-java',
 	\ 'coc-syntax',
 	\ 'coc-tsserver',
-	\ 'coc-vimtex',
 	\ 'coc-markdownlint',
 	\ 'coc-vimtex',
 	\ 'coc-flutter',
