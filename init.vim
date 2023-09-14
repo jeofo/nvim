@@ -1,3 +1,11 @@
+if has('unix')
+	if empty(glob($HOME.'/.config/nvim/autoload/plug.vim'))
+		silent !curl -fLo $HOME/.config/nvim/autoload/plug.vim --create-dirs
+					\ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+		autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+	endif
+endif
+
 if has('win32')
 	set shell=powershell
 	set shellcmdflag=-command
@@ -45,13 +53,16 @@ set ttyfast "should make scrolling faster
 set lazyredraw "same as above
 set visualbell
 set clipboard=unnamedplus
+set spelllang=en_us
 
 
 if has('unix')
 	silent !mkdir -p $HOME/.config/nvim/tmp/backup
 	silent !mkdir -p $HOME/.config/nvim/tmp/undo
+	silent !mkdir -p $HOME/.config/nvim/spell
 endif
 
+set spellfile=$HOME/.config/nvim/spell/en.utf-8.add
 set backupdir=$HOME/.config/nvim/tmp/backup
 set directory=$HOME/.config/nvim/tmp/backup
 
@@ -103,7 +114,9 @@ nnoremap > >>
 " Folding
 noremap <silent> <LEADER>o za
 
- 
+" Set <Leader> left arrow to go to previous buffer
+noremap <silent> <LEADER><Left> :bp<CR>
+noremap <silent> <LEADER><Right> :bn<CR>
 
 
 " ===
@@ -196,8 +209,6 @@ noremap srv <C-w>b<C-w>H
 
 " Change window to tab
 noremap st <C-w>T
-" Press <SPACE> + q to close the window below the current window
-noremap <LEADER>q <C-w>j:q<CR>
 
 
 " ===
@@ -220,13 +231,14 @@ noremap tmi :+tabmove<CR>
 " Opening a terminal window
 noremap <LEADER>/ :set splitright<CR>:vsplit<CR>:term<CR>
 " Closing a terminal window
-tnoremap <Esc> <C-\><C-n>
+tnoremap <ESC> <C-\><C-n>
 
 " Set relative number
 noremap <LEADER>sr :set relativenumber!<CR>
 
 " Spelling Check with <space>sc
 noremap <LEADER>sc :set spell!<CR>
+noremap <LEADER>zz 1z=
 
 " Press ` to change case (instead of ~)
 noremap ` ~
@@ -236,13 +248,18 @@ noremap <C-s> ZZ
 
 " find and replace
 noremap <LEADER>F :%s//<left>
+xnoremap <LEADER>F :s//<left>
 noremap <LEADER>f /
 
 " J for redo
 noremap j <C-R>
 
 " Clear Search
-map <Esc> :noh<CR> 
+tnoremap <expr> <Esc> (&filetype == "fzf") ? "<Esc>" : "<c-\><c-n>"
+"screen movement
+noremap L H
+noremap M L
+noremap H M
 
 
 " Compile function
@@ -250,11 +267,11 @@ noremap <LEADER>rr :call Run()<CR>
 func! Run()
 	exec "w"
 	if &filetype == 'c'
-		exec "!g++ % -o %<"
+		exec "!g++-12 % -o %<"
 		exec "!time ./%<"
 	elseif &filetype == 'cpp'
 		set splitbelow
-		exec "!g++ -std=c++11 % -Wall -o %<"
+		exec "!g++-12 -std=c++11 % -Wall -o %<"
 		:sp
 		:term ./%<
 	elseif &filetype == 'java'
@@ -276,7 +293,6 @@ func! Run()
 	elseif &filetype == 'markdown'
 		exec "MarkdownPreviewToggle"
 	elseif &filetype == 'tex'
-		silent! exec "VimtexStop"
 		silent! exec "VimtexCompile"
 	elseif &filetype == 'javascript'
 		set splitbelow
@@ -286,9 +302,12 @@ func! Run()
 		set splitbelow
 		:sp
 		:term go run .
+	elseif &filetype == 'ocaml'
+		set splitbelow
+		:sp
+		:term make all && clear && make run
 	endif
 endfunc
-
 
 " ===
 " === Install Plugins with Vim-Plug
@@ -296,23 +315,18 @@ endfunc
 call plug#begin('$HOME/.config/nvim/plugged')
 
 Plug 'dracula/vim', { 'as': 'dracula' }
-"Auto-Complete
-Plug 'neoclide/coc.nvim'
+Plug 'neoclide/coc.nvim' , {'do': 'yarn install'}
 "Markdown
 Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install'  }
 "Directory
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
-"Version Control
-Plug 'tpope/vim-fugitive'
 "Surround
 Plug 'tpope/vim-surround'
 "Status Line
 Plug 'itchyny/lightline.vim'
 "Rainbow
 Plug 'luochen1990/rainbow'
-"Fuzzy Search
-Plug 'ctrlpvim/ctrlp.vim'
 "Comments
 Plug 'scrooloose/nerdcommenter'
 "Language Support
@@ -322,18 +336,49 @@ Plug 'pangloss/vim-javascript',{'for': ['javascript','typescript','javascriptrea
 Plug 'ryanoasis/vim-devicons'
 "Latex
 Plug 'lervag/vimtex',{'for':'tex'}
+"Github Copilot
+Plug 'github/copilot.vim'
+"CSS
+Plug 'ap/vim-css-color'
+"Telescope
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim'
+"CTRLP
+Plug 'ctrlpvim/ctrlp.vim'
 call plug#end()
 
 
 """ Plugin Configs
-"Markdown
+"Copilot
+" quickly enable and disable copilot
+nnoremap <leader>cP :Copilot enable<CR>
+nnoremap <leader>cp :Copilot disable<CR>
+
+"Telescope
+" Find files using Telescope command-line sugar.
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fb <cmd>Telescope buffers<cr>
+nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+nnoremap <leader>fz <cmd>Telescope spell_suggest<cr>
+noremap <LEADER><CR> :CtrlPMixed<CR>
 
 "Latex
-let g:vimtex_view_general_viewer = 'okular'
-let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
-let g:vimtex_view_general_options_latexmk = '--unique'
-let g:vimtex_compiler_latexmk_engines ="pdflatex"
-noremap <LEADER>L :VimtexTocOpen<CR>
+let g:tex_flavor='latex' 
+let g:vimtex_view_method = 'skim' 
+let g:vimtex_view_skim_sync = 1
+let g:vimtex_view_skim_activate = 1
+noremap <LEADER>L :VimtexTocToggle<CR>
+noremap <LEADER>v :VimtexView<CR>
+function! s:write_server_name() abort
+  let nvim_server_file = (has('win32') ? $TEMP : '/tmp') . '/vimtexserver.txt'
+  call writefile([v:servername], nvim_server_file)
+endfunction
+
+augroup vimtex_common
+  autocmd!
+  autocmd FileType tex call s:write_server_name()
+augroup END
 "Rainbow
 let g:rainbow_active = 1
 "Language support
@@ -349,10 +394,12 @@ let NERDTreeMenuDown='e'
 let NERDTreeMapUpdir = 'a'
 let NERDTreeMapOpenExpl = 'f'
 let NERDTreeMapUpdirKeepOpen = 'F'
+let NERDTreeMapChangeRoot = "r"
+let NERDTreeMapRefresh = "C"
+
+
 " Toggle NERDTree
 noremap <LEADER>t :NERDTreeToggle<CR>
-"CtrlP
-noremap <LEADER><CR> :CtrlPMixed<CR>
 "Lightline
 let g:lightline = {
       \ 'colorscheme': 'wombat',
@@ -380,6 +427,7 @@ let g:coc_global_extensions = [
 	\ 'coc-markdownlint',
 	\ 'coc-vimtex',
 	\ 'coc-flutter',
+	\ 'coc-go',
 	\ 'coc-snippets']
 
 
@@ -389,10 +437,22 @@ inoremap <silent><expr> <TAB>
       \ <SID>check_back_space() ? "\<TAB>" :
       \ coc#refresh()
 
+" Make <CR> to accept selected completion item or notify coc.nvim to format
+" <C-g>u breaks current undo, please make your own choice.
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+                              \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+inoremap <expr> <Tab> coc#pum#visible() ? coc#pum#next(1) : "\<Tab>"
+inoremap <expr> <S-Tab> coc#pum#visible() ? coc#pum#prev(1) : "\<S-Tab>"
+
 nnoremap <LEADER>l :CocList<cr>
 noremap <LEADER>c :CocCommand<CR>
 nmap <LEADER>rn <Plug>(coc-rename)
-nmap <leader><leader> <Plug>(coc-codeaction)
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
 
 function! s:check_back_space() abort
   let col = col('.') - 1
