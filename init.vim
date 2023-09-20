@@ -247,9 +247,12 @@ noremap ` ~
 noremap <C-s> ZZ
 
 " find and replace
-noremap <LEADER>F :%s//<left>
-xnoremap <LEADER>F :s//<left>
-noremap <LEADER>f /
+noremap <LEADER>R :%s//<left>
+xnoremap <LEADER>R :s//<left>
+noremap <LEADER>F /
+"
+" remap :noh to <leader>h
+noremap <LEADER>h :noh<CR>
 
 " J for redo
 noremap j <C-R>
@@ -351,8 +354,8 @@ call plug#end()
 """ Plugin Configs
 "Copilot
 " quickly enable and disable copilot
-nnoremap <leader>cP :Copilot enable<CR>
-nnoremap <leader>cp :Copilot disable<CR>
+nnoremap <leader>gC :Copilot enable<CR>
+nnoremap <leader>gc :Copilot disable<CR>
 
 "Telescope
 " Find files using Telescope command-line sugar.
