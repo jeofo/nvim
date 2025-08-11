@@ -468,6 +468,7 @@ require("lazy").setup({
       vim.g.lsp_zero_extend_lspconfig = 0
     end,
   },
+
   {
     'williamboman/mason.nvim',
     lazy = false,
@@ -486,71 +487,63 @@ require("lazy").setup({
   },
   -- Autocompletion
   {
-		'hrsh7th/nvim-cmp',
-		event = 'InsertEnter',
-		dependencies = {
-			{ 'L3MON4D3/LuaSnip', version = "v2.*", build = "make install_jsregexp" },
-			{ 'hrsh7th/cmp-nvim-lsp' },
-			{ 'saadparwaiz1/cmp_luasnip' }, -- completion source for LuaSnip
-		},
-		config = function()
-			local lsp_zero = require('lsp-zero')
-			lsp_zero.extend_cmp()
+    'hrsh7th/nvim-cmp',
+    event = 'InsertEnter',
+    dependencies = {
+      {'L3MON4D3/LuaSnip', version = "v2.*", build = "make install_jsregexp"},
+      {'hrsh7th/cmp-nvim-lsp'},
+    },
+    config = function()
+      local lsp_zero = require('lsp-zero')
+      lsp_zero.extend_cmp()
 
-			local cmp = require('cmp')
-			local ls  = require('luasnip')
+      local cmp = require('cmp')
+      local ls = require("luasnip")
 
-			-- Load SnipMate snippets from ~/.config/nvim/snippets
-			require("luasnip.loaders.from_snipmate").lazy_load({
-				paths = vim.fn.stdpath("config") .. "/snippets",
-			})
+      -- Custom Tab handling for cmp -> Copilot -> Tab
+      vim.keymap.set({ "i", "s" }, "<Tab>", function()
+        if cmp.visible() then
+          cmp.confirm({ select = true })
+          return
+        end
 
-			-- Optional LuaSnip settings
-			ls.config.set_config({
-				history = true,
-				updateevents = "TextChanged,TextChangedI",
-			})
+        vim.defer_fn(function()
+          if cmp.visible() then
+            cmp.confirm({ select = true })
+            return
+          end
 
-			-- Your custom Tab: cmp → Copilot → Tab
-			vim.keymap.set({ "i", "s" }, "<Tab>", function()
-				if cmp.visible() then
-					cmp.confirm({ select = true })
-					return
-				end
-				vim.defer_fn(function()
-					if cmp.visible() then
-						cmp.confirm({ select = true })
-						return
-					end
-					local keys = vim.fn["copilot#Accept"]("\\<Tab>")
-					vim.api.nvim_feedkeys(keys, "n", true)
-				end, 150)
-			end, { silent = true, noremap = true, desc = "cmp → Copilot → <Tab>" })
-			cmp.setup({
-				snippet = {
-					expand = function(args)
-						ls.lsp_expand(args.body)  -- make cmp expand snippets
-					end,
-				},
-				sources = {
-					{ name = 'luasnip' },   -- add LuaSnip source
-					{ name = 'nvim_lsp' },
-					{ name = 'buffer' },
-					{ name = 'path' },
-				},
-				mapping = cmp.mapping.preset.insert({
-					['<CR>'] = cmp.mapping.confirm({ select = false }),
-				}),
-				preselect = 'item',
-				completion = { completeopt = 'menu,menuone,noinsert' },
-				window = {
-					completion = cmp.config.window.bordered(),
-					documentation = cmp.config.window.bordered(),
-				},
-			})
-		end
-		},
-    -- LSP
+          local keys = vim.fn["copilot#Accept"]("\\<Tab>")
+          vim.api.nvim_feedkeys(keys, "n", true)
+        end, 150)
+      end, { silent = true, noremap = true, desc = "cmp → Copilot → <Tab>" })
+
+      cmp.setup({
+        sources = {
+          { name = 'nvim_lsp' },
+          { name = 'buffer' },
+          { name = 'path' },
+        },
+        mapping = cmp.mapping.preset.insert({
+          ['<CR>'] = cmp.mapping.confirm({select = false}),
+        }),
+        preselect = 'item',
+        completion = {
+          completeopt = 'menu,menuone,noinsert',
+        },
+        window = {
+          completion = cmp.config.window.bordered(),
+          documentation = cmp.config.window.bordered(),
+        }
+      })
+        if ls.choice_active() then
+          ls.change_choice(1)
+        end
+      end, {silent = true})
+    end
+  },
+
+  -- LSP
   {
     'neovim/nvim-lspconfig',
     cmd = {'LspInfo', 'LspInstall', 'LspStart'},
