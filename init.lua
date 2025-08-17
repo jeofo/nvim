@@ -1,6 +1,3 @@
--- Default providers
-vim.g.python3_host_prog = '/opt/homebrew/bin/python'
-
 -- Editor Behavior
 vim.opt.number = true
 vim.opt.cursorline = true
@@ -8,6 +5,7 @@ vim.opt.hidden = true
 vim.opt.relativenumber = true
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
+vim.opt.cmdheight = 0
 vim.opt.softtabstop = 2
 vim.opt.autoindent = true
 vim.opt.list = true
@@ -66,6 +64,7 @@ vim.g.neoterm_autoscroll = 1
 vim.cmd('autocmd TermOpen term://* startinsert')
 vim.keymap.set('t', '<C-N>', '<C-\\><C-N>', { noremap = true })
 vim.keymap.set('t', '<C-O>', '<C-\\><C-N><C-O>', { noremap = true })
+vim.keymap.set('t', '<Esc>', '<C-\\><C-N>', { noremap = true })
 
 -- Set <LEADER> as <SPACE>
 vim.g.mapleader = ' '
@@ -139,10 +138,6 @@ vim.keymap.set('n', '<leader>d', '"_d', opts)
 vim.keymap.set('x', '<leader>d', '"_d', opts)
 vim.keymap.set('x', '<leader>p', '"_dP', opts)
 
--- Insert Mode Cursor Movement
-vim.keymap.set('i', '<C-i>', '<Esc>A', opts)
-vim.keymap.set('i', '<C-n>', '<Esc>0', opts)
-
 -- Searching
 vim.keymap.set('n', '-', 'N', opts)
 vim.keymap.set('n', '=', 'n', opts)
@@ -180,7 +175,10 @@ vim.keymap.set({ 'n', 'v' }, 'tmi', ':+tabmove<CR>', opts)
 
 -- Terminal
 vim.keymap.set({ 'n', 'v' }, '<Leader>/', ':set splitbelow<CR>:split<CR>:execute "resize".(winheight(0)/2)<CR>:term<CR>', opts)
-vim.keymap.set({ 'n', 'v' }, '<Leader>g', ':vsplit<CR>:execute "vertical resize".(winwidth(0)* 5/6)<CR>:term gemini<CR>', opts)
+vim.keymap.set({ 'n', 'v' }, '<Leader>\\',
+  ':set splitright<CR>:vsplit<CR>:execute "vertical resize " .. float2nr(&columns * 0.3)<CR>:term<CR>',
+  opts
+)
 
 -- Utilities
 vim.keymap.set({ 'n', 'v' }, '<Leader>sr', ':set relativenumber!<CR>', opts)
@@ -259,6 +257,13 @@ require("lazy").setup({
 					vim.keymap.set("n", lhs, rhs, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = desc })
 				end
 
+				vim.keymap.set("n", "O", function()
+					local node = api.tree.get_node_under_cursor()
+					if node then
+						vim.fn.jobstart({ "open", "-R", node.absolute_path }, { detach = true })
+					end
+				end, { buffer = bufnr, desc = "Reveal in Finder" })
+
 				-- j → n (down), k → e (up) : use raw cursor movement
 				map("e", "j", "Down", { remap = true })
 				map("u", "k", "Up",   { remap = true })
@@ -268,7 +273,6 @@ require("lazy").setup({
 				map("`", api.tree.change_root_to_parent,"Change Root To Parent")
 				map("~", api.tree.change_root_to_node,"Change Root To Node")
 				map("R", api.tree.reload,"Refresh")
-
 			end,
 			view = {
 				width = 34,
@@ -435,7 +439,7 @@ require("lazy").setup({
       { "<leader>fz", ":Telescope spell_suggest<CR>", desc = "Spell suggestions" },
       { "<leader>fb", ":Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>fg", ":Telescope git_status<CR>", desc = "Git status" },
-      { "<Leader><CR>", ":Telescope fd<CR>", desc = "Find files" },
+      { "<Leader><CR>", ":Telescope find_files<CR>", desc = "Find files" },
     },
     config = function()
       require('telescope').setup({
@@ -450,7 +454,14 @@ require("lazy").setup({
         },
         pickers = {
           find_files = {
-            hidden = true
+            hidden = true,
+            no_ignore = true,
+            no_ignore_parent = true,
+            find_command = { 
+              "rg", "--files", "--hidden", "--glob", "!.git/*", 
+              "--glob", "!node_modules/*", "--glob", "!target/*", 
+              "--glob", "!build/*", "--glob", "!dist/*"
+            }
           }
         }
       })
@@ -485,71 +496,87 @@ require("lazy").setup({
     },
   },
   -- Autocompletion
-  {
-		'hrsh7th/nvim-cmp',
-		event = 'InsertEnter',
-		dependencies = {
-			{ 'L3MON4D3/LuaSnip', version = "v2.*", build = "make install_jsregexp" },
-			{ 'hrsh7th/cmp-nvim-lsp' },
-			{ 'saadparwaiz1/cmp_luasnip' }, -- completion source for LuaSnip
-		},
-		config = function()
-			local lsp_zero = require('lsp-zero')
-			lsp_zero.extend_cmp()
+{
+  'hrsh7th/nvim-cmp',
+  event = 'InsertEnter',
+  dependencies = {
+    { 'hrsh7th/cmp-nvim-lsp' },
+    { 'hrsh7th/cmp-buffer' },
+    { 'hrsh7th/cmp-path' }
+  },
+  config = function()
+    local cmp = require('cmp')
 
-			local cmp = require('cmp')
-			local ls  = require('luasnip')
+    cmp.setup({
+      sources = {
+        { name = 'nvim_lsp', priority = 800 },
+        { name = 'buffer', priority = 500 },
+        { name = 'path', priority = 300 },
+      },
+      formatting = {
+        fields = { "abbr", "menu" },
+        format = function(entry, vim_item)
+          vim_item.menu = ({
+            nvim_lsp = "[LSP]",
+            buffer = "[Buffer]",
+            path = "[Path]",
+          })[entry.source.name]
+          return vim_item
+        end,
+      },
+      mapping = cmp.mapping.preset.insert({
+        -- TAB: cmp -> copilot -> fallback
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_next_item()
+          -- Try Copilot
+          else
+            local keys = vim.fn["copilot#Accept"]("")
+            if keys ~= "" then
+              vim.api.nvim_feedkeys(keys, "i", true)
+            else
+              fallback()
+            end
+          end
+        end, { "i", "s" }),
 
-			-- Load SnipMate snippets from ~/.config/nvim/snippets
-			require("luasnip.loaders.from_snipmate").lazy_load({
-				paths = vim.fn.stdpath("config") .. "/snippets",
-			})
+        -- Shift-Tab: previous item or fallback
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_prev_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
 
-			-- Optional LuaSnip settings
-			ls.config.set_config({
-				history = true,
-				updateevents = "TextChanged,TextChangedI",
-			})
+        ["<CR>"] = cmp.mapping({
+          i = function(fallback)
+            if cmp.visible() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+            else
+              fallback()
+            end
+          end,
+          s = cmp.mapping.confirm({ select = true }),
+          c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
+        }),
+      }),
+      preselect = 'item',
+      completion = { completeopt = 'menu,menuone,noinsert' },
+      window = {
+        completion = cmp.config.window.bordered({
+          max_height = math.min(15, math.floor(vim.o.lines * 0.4)),
+          max_width = math.min(60, math.floor(vim.o.columns * 0.5)),
+        }),
+        documentation = vim.o.columns > 100 and cmp.config.window.bordered({
+          max_height = math.min(15, math.floor(vim.o.lines * 0.4)),
+          max_width = math.min(50, math.floor(vim.o.columns * 0.3)),
+        }) or false,
+      },
 
-			-- Your custom Tab: cmp → Copilot → Tab
-			vim.keymap.set({ "i", "s" }, "<Tab>", function()
-				if cmp.visible() then
-					cmp.confirm({ select = true })
-					return
-				end
-				vim.defer_fn(function()
-					if cmp.visible() then
-						cmp.confirm({ select = true })
-						return
-					end
-					local keys = vim.fn["copilot#Accept"]("\\<Tab>")
-					vim.api.nvim_feedkeys(keys, "n", true)
-				end, 150)
-			end, { silent = true, noremap = true, desc = "cmp → Copilot → <Tab>" })
-			cmp.setup({
-				snippet = {
-					expand = function(args)
-						ls.lsp_expand(args.body)  -- make cmp expand snippets
-					end,
-				},
-				sources = {
-					{ name = 'luasnip' },   -- add LuaSnip source
-					{ name = 'nvim_lsp' },
-					{ name = 'buffer' },
-					{ name = 'path' },
-				},
-				mapping = cmp.mapping.preset.insert({
-					['<CR>'] = cmp.mapping.confirm({ select = false }),
-				}),
-				preselect = 'item',
-				completion = { completeopt = 'menu,menuone,noinsert' },
-				window = {
-					completion = cmp.config.window.bordered(),
-					documentation = cmp.config.window.bordered(),
-				},
-			})
-		end
-		},
+    })
+    end,
+  },
     -- LSP
   {
     'neovim/nvim-lspconfig',
@@ -657,10 +684,16 @@ require("lazy").setup({
   -- GitHub Copilot
   {
     "github/copilot.vim",
-    event = "InsertEnter",
+    lazy = false,  -- Load immediately on startup
+    priority = 1000,  -- Load early
     init = function()
       vim.g.copilot_no_tab_map = true
       vim.g.copilot_assume_mapped = true
+      vim.g.copilot_enabled = 1  -- Explicitly enable Copilot
+    end,
+    config = function()
+      -- Ensure Copilot is enabled after loading
+      vim.cmd('Copilot enable')
     end,
   },
 })
