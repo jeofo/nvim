@@ -32,11 +32,14 @@ vim.opt.completeopt = 'longest,noinsert,noselect,menuone'
 vim.opt.ttyfast = true
 vim.opt.lazyredraw = true
 vim.opt.visualbell = true
-vim.opt.clipboard = 'unnamedplus'
 vim.opt.spelllang = 'en_us'
 vim.opt.updatetime = 100
+vim.opt.conceallevel = 2  -- Required for image.nvim to properly render images
 vim.opt.virtualedit = 'block'
 vim.opt.autoread = true
+vim.opt.winborder = "rounded"
+vim.opt.iskeyword:remove('_')
+vim.opt.clipboard = 'unnamedplus'
 
 -- Auto-reload files when they change externally
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
@@ -103,8 +106,11 @@ vim.keymap.set({ 'n', 'v' }, '<Leader>o', 'za', opts)
 vim.keymap.set({ 'n', 'v' }, '<Leader>O', 'zM', opts)
 vim.keymap.set({ 'n', 'v' }, '<Leader>U', 'zR', opts)
 
--- Close all buffers except current
+-- Buffer Management
 vim.keymap.set({ 'n', 'v' }, '<Leader>Q', ':w | %bd | e#<CR><CR>', opts)
+vim.keymap.set({ 'n', 'v' }, '<Leader>q', ':bdelete<CR>', opts)
+vim.keymap.set({ 'n', 'v' }, '[[', ':bprevious<CR>', opts)
+vim.keymap.set({ 'n', 'v' }, ']]', ':bnext<CR>', opts)
 
 -- Cursor Movement (Colemak-style)
 vim.keymap.set({ 'n', 'v' }, 'u', 'k', opts)
@@ -125,13 +131,6 @@ vim.keymap.set({ 'n', 'v' }, 'I', '$', opts)
 -- Faster in-line navigation
 vim.keymap.set({ 'n', 'v' }, 'W', '5w', opts)
 vim.keymap.set({ 'n', 'v' }, 'B', '5b', opts)
-
--- Set h (same as n, cursor left) to 'end of word'
-vim.keymap.set({ 'n', 'v' }, 'h', 'e', opts)
-
--- Ctrl + U or E will move up/down the view port without moving the cursor
-vim.keymap.set({ 'n', 'v' }, '<C-U>', '5<C-y>', opts)
-vim.keymap.set({ 'n', 'v' }, '<C-E>', '5<C-e>', opts)
 
 -- Delete w/out yanking
 vim.keymap.set('n', '<leader>d', '"_d', opts)
@@ -175,10 +174,7 @@ vim.keymap.set({ 'n', 'v' }, 'tmi', ':+tabmove<CR>', opts)
 
 -- Terminal
 vim.keymap.set({ 'n', 'v' }, '<Leader>/', ':set splitbelow<CR>:split<CR>:execute "resize".(winheight(0)/2)<CR>:term<CR>', opts)
-vim.keymap.set({ 'n', 'v' }, '<Leader>\\',
-  ':set splitright<CR>:vsplit<CR>:execute "vertical resize " .. float2nr(&columns * 0.3)<CR>:term<CR>',
-  opts
-)
+vim.keymap.set({ 'n', 'v' }, '<Leader>\\',':set splitright<CR>:vsplit<CR>:execute "vertical resize " .. float2nr(&columns * 0.3)<CR>:term<CR>',opts)
 
 -- Utilities
 vim.keymap.set({ 'n', 'v' }, '<Leader>sr', ':set relativenumber!<CR>', opts)
@@ -197,9 +193,15 @@ vim.keymap.set({ 'n', 'v' }, 'L', 'H', opts)
 vim.keymap.set({ 'n', 'v' }, 'M', 'L', opts)
 vim.keymap.set({ 'n', 'v' }, 'H', 'M', opts)
 
--- Buffer Management
-vim.keymap.set('n', '<Tab>', '<C-i>', opts)
-vim.keymap.set('n', '<Bs>', '<C-o>', opts)
+-- Viewport movement 
+vim.keymap.set({ 'n', 'v' }, '<C-y>', '<nop>', opts)
+vim.keymap.set({ 'n', 'v' }, '<C-e>', '<nop>', opts)
+vim.keymap.set({ 'n', 'v' }, '<C-U>', '5<C-y>', opts)
+vim.keymap.set({ 'n', 'v' }, '<C-E>', '5<C-e>', opts)
+
+-- Insert mode begin and end of line
+vim.keymap.set('i', '<C-n>', '<C-o>0', opts)
+vim.keymap.set('i', '<C-i>', '<C-o>$', opts)
 
 -- Plugin Manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -479,6 +481,8 @@ require("lazy").setup({
       vim.g.lsp_zero_extend_lspconfig = 0
     end,
   },
+
+  -- Mason LSP server manager
   {
     'williamboman/mason.nvim',
     lazy = false,
@@ -495,6 +499,7 @@ require("lazy").setup({
       }
     },
   },
+
   -- Autocompletion
 {
   'hrsh7th/nvim-cmp',
@@ -503,15 +508,21 @@ require("lazy").setup({
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'hrsh7th/cmp-buffer' },
     { 'hrsh7th/cmp-path' }
+
   },
   config = function()
     local cmp = require('cmp')
+    
+    -- Variable to track CMP timeout state
+    local cmp_timeout_active = false
+    local cmp_timer = nil
 
     cmp.setup({
       sources = {
         { name = 'nvim_lsp', priority = 800 },
         { name = 'buffer', priority = 500 },
         { name = 'path', priority = 300 },
+				{ name = 'cmp_r', priority = 700 },
       },
       formatting = {
         fields = { "abbr", "menu" },
@@ -525,18 +536,52 @@ require("lazy").setup({
         end,
       },
       mapping = cmp.mapping.preset.insert({
-        -- TAB: cmp -> copilot -> fallback
+        -- Override default <C-n> and <C-p> mappings to use fallback
+        ["<C-n>"] = cmp.mapping(function(fallback)
+          fallback()
+        end, { "i", "s" }),
+        ["<C-p>"] = cmp.mapping(function(fallback)
+          fallback()
+        end, { "i", "s" }),
+        
+        -- TAB: copilot -> cmp (with 250ms timeout logic) -> fallback
         ["<Tab>"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
-            cmp.select_next_item()
-          -- Try Copilot
-          else
-            local keys = vim.fn["copilot#Accept"]("")
-            if keys ~= "" then
-              vim.api.nvim_feedkeys(keys, "i", true)
-            else
-              fallback()
+          -- First, always try Copilot
+          local copilot_keys = vim.fn["copilot#Accept"]("")
+          if copilot_keys ~= "" then
+            vim.api.nvim_feedkeys(copilot_keys, "i", true)
+            -- Clear any existing CMP timeout
+            if cmp_timer then
+              cmp_timer:stop()
+              cmp_timer = nil
             end
+            cmp_timeout_active = false
+            return
+          end
+          
+          -- No Copilot suggestion available
+          if cmp.visible() and cmp_timeout_active then
+            -- CMP menu is visible and we're in timeout period, navigate it
+            cmp.select_next_item()
+          elseif cmp.visible() and not cmp_timeout_active then
+            -- CMP menu is visible but timeout expired, close it and fallback
+            cmp.close()
+            fallback()
+          else
+            -- No CMP menu visible, trigger it and start timeout
+            cmp.complete()
+            cmp_timeout_active = true
+            
+            -- Clear any existing timer
+            if cmp_timer then
+              cmp_timer:stop()
+            end
+            
+            -- Set 250ms timeout
+            cmp_timer = vim.defer_fn(function()
+              cmp_timeout_active = false
+              cmp_timer = nil
+            end, 250)
           end
         end, { "i", "s" }),
 
@@ -564,14 +609,8 @@ require("lazy").setup({
       preselect = 'item',
       completion = { completeopt = 'menu,menuone,noinsert' },
       window = {
-        completion = cmp.config.window.bordered({
-          max_height = math.min(15, math.floor(vim.o.lines * 0.4)),
-          max_width = math.min(60, math.floor(vim.o.columns * 0.5)),
-        }),
-        documentation = vim.o.columns > 100 and cmp.config.window.bordered({
-          max_height = math.min(15, math.floor(vim.o.lines * 0.4)),
-          max_width = math.min(50, math.floor(vim.o.columns * 0.3)),
-        }) or false,
+        completion = cmp.config.window.bordered(),
+        documentation = cmp.config.window.bordered(),
       },
 
     })
@@ -592,12 +631,13 @@ require("lazy").setup({
 
       lsp_zero.on_attach(function(client, bufnr)
         lsp_zero.default_keymaps({buffer = bufnr})
-        vim.keymap.set('n', 'T', '<cmd>lua vim.lsp.buf.hover()<CR>', {buffer = bufnr})
+        vim.keymap.set('n', 'T', '<cmd>lua vim.lsp.buf.hover({ buffer = "rounded" })<CR>', {buffer = bufnr})
         vim.keymap.set('n', '<LEADER>dd', ':lua vim.diagnostic.open_float(0, {scope="line"})<CR>', {buffer = bufnr})
         vim.keymap.set('n', '<LEADER>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', {buffer = bufnr})
         vim.keymap.set('n', '<LEADER>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', {buffer = bufnr})
         vim.keymap.set('n', '<LEADER>fd', '<cmd>lua vim.lsp.buf.definition()<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '<LEADER>gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', {buffer = bufnr})
+				vim.keymap.set("n", "<LEADER>=", vim.diagnostic.goto_next)
+				vim.keymap.set("n", "<LEADER-", vim.diagnostic.goto_prev)
       end)
 
       vim.diagnostic.config({virtual_text = false})
@@ -684,16 +724,82 @@ require("lazy").setup({
   -- GitHub Copilot
   {
     "github/copilot.vim",
-    lazy = false,  -- Load immediately on startup
-    priority = 1000,  -- Load early
+		lazy = false,
+		priority = 1000,
     init = function()
       vim.g.copilot_no_tab_map = true
       vim.g.copilot_assume_mapped = true
-      vim.g.copilot_enabled = 1  -- Explicitly enable Copilot
+      vim.g.copilot_enabled = 1
     end,
+  },
+
+	-- image.nvim support - simplified configuration for showing images and remote images
+	{
+		"3rd/image.nvim", 
+		event = "VeryLazy", 
+		dependencies = {"nvim-treesitter/nvim-treesitter"},
+		opts = {
+			backend = "kitty",
+      max_width = 100, -- tweak to preference
+      max_height = 12, -- ^
+      max_height_window_percentage = math.huge, -- this is necessary for a good experience
+      max_width_window_percentage = math.huge,
+      window_overlap_clear_enabled = true,
+      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+			integrations = {
+				markdown = {
+					enabled = true,
+					clear_in_insert_mode = false,
+					download_remote_images = true,
+					only_render_image_at_cursor = false,
+					filetypes = { "markdown", "ipynb" },
+				},
+			},
+      
+		},
+	},
+	-- Molten.nvim - notebook support
+  {
+    "benlubas/molten-nvim",
+    version = "^1.0.0", 
+    dependencies = { "3rd/image.nvim" },
+    build = ":UpdateRemotePlugins",
+    init = function()
+      vim.g.molten_image_provider = "image.nvim"
+      vim.g.molten_output_win_max_height = 20
+    end,
+  },
+	-- Quarto support
+  {
+    "quarto-dev/quarto-nvim",
+    dependencies = {
+      "jmbuhr/otter.nvim",
+      "nvim-treesitter/nvim-treesitter",
+    },
+    ft = { "quarto" },
     config = function()
-      -- Ensure Copilot is enabled after loading
-      vim.cmd('Copilot enable')
+      require('quarto').setup{
+        debug = false,
+        closePreviewOnExit = true,
+        lspFeatures = {
+          enabled = true,
+          chunks = "curly",
+          languages = { "r", "python", "julia", "bash", "html" },
+          diagnostics = {
+            enabled = true,
+            triggers = { "BufWritePost" },
+          },
+          completion = {
+            enabled = true,
+          },
+        },
+        codeRunner = {
+          enabled = true,
+          default_method = "molten", 
+          ft_runners = {},
+          never_run = { 'yaml' },
+        },
+      }
     end,
   },
 })
@@ -706,6 +812,21 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
       vim.cmd("syntax sync fromstart")
     else
       vim.cmd("syntax sync clear")
+    end
+  end,
+})
+
+-- Disable concealment for files with R code blocks (molten/quarto)
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+  pattern = { "*.qmd", "*.Rmd", "*.ipynb", "*.md" },
+  callback = function()
+    -- Check if the buffer contains R code blocks
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    for _, line in ipairs(lines) do
+      if line:match("```{[Rr]}") or line:match("```{python}") then
+        vim.wo.conceallevel = 0  -- Disable concealment for this window
+        break
+      end
     end
   end,
 })
