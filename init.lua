@@ -34,7 +34,7 @@ vim.opt.lazyredraw = true
 vim.opt.visualbell = true
 vim.opt.spelllang = 'en_us'
 vim.opt.updatetime = 100
-vim.opt.conceallevel = 2  -- Required for image.nvim to properly render images
+vim.opt.conceallevel = 0 
 vim.opt.virtualedit = 'block'
 vim.opt.autoread = true
 vim.opt.winborder = "rounded"
@@ -249,6 +249,11 @@ require("lazy").setup({
 			hijack_cursor = true,
 			sync_root_with_cwd = true,
 			update_focused_file = { enable = true, update_root = false },
+			actions = {
+				open_file = {
+					quit_on_open = true,
+				},
+			},
 
 			on_attach = function(bufnr)
 				local api = require("nvim-tree.api")
@@ -271,9 +276,6 @@ require("lazy").setup({
 				map("u", "k", "Up",   { remap = true })
 				map("E", "5j", "Down", { remap = true })
 				map("U", "5k", "Up",   { remap = true })
-
-				map("`", api.tree.change_root_to_parent,"Change Root To Parent")
-				map("~", api.tree.change_root_to_node,"Change Root To Node")
 				map("R", api.tree.reload,"Refresh")
 			end,
 			view = {
@@ -325,8 +327,13 @@ require("lazy").setup({
           left = {
             { 'mode', 'paste' },
             { 'readonly', 'filename', 'modified'}
+          },
+          right = {
+            { 'lineinfo' },
+            { 'percent' },
+            { 'fileformat', 'fileencoding', 'filetype' },
           }
-        }
+        },
       }
     end,
   },
@@ -733,42 +740,41 @@ require("lazy").setup({
     end,
   },
 
-	-- image.nvim support - simplified configuration for showing images and remote images
-	{
-		"3rd/image.nvim", 
-		event = "VeryLazy", 
-		dependencies = {"nvim-treesitter/nvim-treesitter"},
-		opts = {
-			backend = "kitty",
-      max_width = 100, -- tweak to preference
-      max_height = 12, -- ^
-      max_height_window_percentage = math.huge, -- this is necessary for a good experience
-      max_width_window_percentage = math.huge,
-      window_overlap_clear_enabled = true,
-      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
-			integrations = {
-				markdown = {
-					enabled = true,
-					clear_in_insert_mode = false,
-					download_remote_images = true,
-					only_render_image_at_cursor = false,
-					filetypes = { "markdown", "ipynb" },
-				},
-			},
-      
-		},
-	},
-	-- Molten.nvim - notebook support
-  {
-    "benlubas/molten-nvim",
-    version = "^1.0.0", 
-    dependencies = { "3rd/image.nvim" },
-    build = ":UpdateRemotePlugins",
-    init = function()
-      vim.g.molten_image_provider = "image.nvim"
-      vim.g.molten_output_win_max_height = 20
+  -- Iron.nvim to run REPL
+  {"Vigemus/iron.nvim",
+		ft = { "python", "sh", "r", "rmd", "quarto" },
+    config = function()
+      local iron = require("iron.core")
+      local view = require("iron.view")
+      local common = require("iron.fts.common")
+      iron.setup {
+        config = {
+          scratch_repl = true,
+          repl_definition = {
+            sh = {
+              command = {"zsh"}
+            },
+            python = {
+              command = { "python3" },  -- or { "ipython", "--no-autoindent" }
+              format = common.bracketed_paste_python,
+              block_dividers = { "# %%", "#%%" },
+              env = {PYTHON_BASIC_REPL = "1"} --this is needed for python3.13 and up.
+            }
+          },
+          repl_filetype = function(bufnr, ft)
+            return ft
+          end,
+          dap_integration = true,
+          repl_open_cmd = view.split.vertical.botright(40),
+        },
+        highlight = {
+          italic = true
+        },
+        ignore_blank_lines = true, -- ignore blank lines when sending visual select lines
+      }
     end,
   },
+
 	-- Quarto support
   {
     "quarto-dev/quarto-nvim",
@@ -795,13 +801,43 @@ require("lazy").setup({
         },
         codeRunner = {
           enabled = true,
-          default_method = "molten", 
+          default_method = "iron", 
           ft_runners = {},
           never_run = { 'yaml' },
         },
       }
+      -- Quarto runner keymaps
+      local runner = require("quarto.runner")
+      vim.keymap.set("n", "<localleader>rc", runner.run_cell,  { desc = "run cell", silent = true })
+      vim.keymap.set("n", "<localleader>ra", runner.run_above, { desc = "run cell and above", silent = true })
+      vim.keymap.set("n", "<localleader>rA", runner.run_all,   { desc = "run all cells", silent = true })
+      vim.keymap.set("n", "<localleader>rl", runner.run_line,  { desc = "run line", silent = true })
+      vim.keymap.set("v", "<localleader>r",  runner.run_range, { desc = "run visual range", silent = true })
     end,
   },
+	{
+    'jmbuhr/otter.nvim',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+    },
+		ft = { "quarto" },
+    config = function()
+      require('otter').setup({
+        lsp = {
+          hover = {
+            border = 'rounded',
+          },
+          completion = {
+            border = 'rounded',
+          },
+        },
+        buffers = {
+          set_filetype = true,
+        },
+        handle_leading_whitespace = true,
+      })
+    end,
+	},
 })
 
 -- Language support autocmds
@@ -816,17 +852,13 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
   end,
 })
 
--- Disable concealment for files with R code blocks (molten/quarto)
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-  pattern = { "*.qmd", "*.Rmd", "*.ipynb", "*.md" },
+-- Activate Otter for Quarto files
+vim.api.nvim_create_autocmd('BufReadPost', {
+  pattern = '*.qmd',
   callback = function()
-    -- Check if the buffer contains R code blocks
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    for _, line in ipairs(lines) do
-      if line:match("```{[Rr]}") or line:match("```{python}") then
-        vim.wo.conceallevel = 0  -- Disable concealment for this window
-        break
-      end
-    end
+    vim.defer_fn(function()
+      require('otter').activate()
+    end, 100)
   end,
+  desc = "Activate Otter for Quarto files"
 })
