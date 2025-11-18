@@ -520,16 +520,15 @@ require("lazy").setup({
   config = function()
     local cmp = require('cmp')
     
-    -- Variable to track CMP timeout state
-    local cmp_timeout_active = false
-    local cmp_timer = nil
+    -- State tracking for tab behavior
+    local focus_state = "none" -- "none", "copilot", "cmp"
 
     cmp.setup({
       sources = {
         { name = 'nvim_lsp', priority = 800 },
         { name = 'buffer', priority = 500 },
         { name = 'path', priority = 300 },
-				{ name = 'cmp_r', priority = 700 },
+			{ name = 'cmp_r', priority = 700 },
       },
       formatting = {
         fields = { "abbr", "menu" },
@@ -551,67 +550,114 @@ require("lazy").setup({
           fallback()
         end, { "i", "s" }),
         
-        -- TAB: copilot -> cmp (with 250ms timeout logic) -> fallback
+        -- TAB: Toggle between copilot and cmp when both available, then navigate cmp
         ["<Tab>"] = cmp.mapping(function(fallback)
-          -- First, always try Copilot
-          local copilot_keys = vim.fn["copilot#Accept"]("")
-          if copilot_keys ~= "" then
-            vim.api.nvim_feedkeys(copilot_keys, "i", true)
-            -- Clear any existing CMP timeout
-            if cmp_timer then
-              cmp_timer:stop()
-              cmp_timer = nil
+          local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
+          local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+          local has_cmp = cmp.visible()
+          
+          -- Case 1: Both Copilot and CMP are available
+          if has_copilot and has_cmp then
+            if focus_state == "none" then
+              -- First tab: select first CMP item and switch focus to CMP
+              focus_state = "cmp"
+              cmp.select_next_item()
+              return
+            elseif focus_state == "cmp" then
+              -- Subsequent tabs: navigate down CMP menu
+              cmp.select_next_item()
+              return
             end
-            cmp_timeout_active = false
+          end
+          
+          -- Case 2: Only Copilot available
+          if has_copilot and not has_cmp then
+            local copilot_keys = vim.fn["copilot#Accept"]("")
+            if copilot_keys ~= "" then
+              vim.api.nvim_feedkeys(copilot_keys, "i", true)
+              focus_state = "none"
+              return
+            end
+          end
+          
+          -- Case 3: Only CMP available
+          if not has_copilot and has_cmp then
+            focus_state = "cmp"
+            cmp.select_next_item()
             return
           end
           
-          -- No Copilot suggestion available
-          if cmp.visible() and cmp_timeout_active then
-            -- CMP menu is visible and we're in timeout period, navigate it
+          -- Case 4: CMP is visible and we're already in CMP focus mode
+          if has_cmp and focus_state == "cmp" then
             cmp.select_next_item()
-          elseif cmp.visible() and not cmp_timeout_active then
-            -- CMP menu is visible but timeout expired, close it and fallback
-            cmp.close()
-            fallback()
-          else
-            -- No CMP menu visible, trigger it and start timeout
-            cmp.complete()
-            cmp_timeout_active = true
-            
-            -- Clear any existing timer
-            if cmp_timer then
-              cmp_timer:stop()
-            end
-            
-            -- Set 250ms timeout
-            cmp_timer = vim.defer_fn(function()
-              cmp_timeout_active = false
-              cmp_timer = nil
-            end, 250)
+            return
           end
+          
+          -- Case 5: Nothing available, try to trigger CMP
+          if not has_copilot and not has_cmp then
+            cmp.complete()
+            focus_state = "cmp"
+            return
+          end
+          
+          -- Fallback
+          focus_state = "none"
+          fallback()
         end, { "i", "s" }),
 
-        -- Shift-Tab: previous item or fallback
+        -- Shift-Tab: Navigate up in CMP or fallback
         ["<S-Tab>"] = cmp.mapping(function(fallback)
           if cmp.visible() then
+            focus_state = "cmp"
             cmp.select_prev_item()
           else
             fallback()
           end
         end, { "i", "s" }),
 
+        -- Enter: Use CMP if item is selected, otherwise prioritize Copilot
         ["<CR>"] = cmp.mapping({
           i = function(fallback)
+            local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
+            local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+            
+            -- If CMP is visible and has a selected item, use CMP
+            if cmp.visible() and cmp.get_active_entry() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+              focus_state = "none"
+              return
+            end
+            
+            -- If no CMP selection but Copilot available, use Copilot
+            if has_copilot then
+              local copilot_keys = vim.fn["copilot#Accept"]("")
+              if copilot_keys ~= "" then
+                vim.api.nvim_feedkeys(copilot_keys, "i", true)
+                focus_state = "none"
+                return
+              end
+            end
+            
+            -- If CMP is visible but no item selected, still try to confirm
             if cmp.visible() then
               cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
-            else
-              fallback()
+              focus_state = "none"
+              return
             end
+            
+            -- Reset focus state and fallback (normal Enter behavior)
+            focus_state = "none"
+            fallback()
           end,
           s = cmp.mapping.confirm({ select = true }),
           c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
         }),
+        
+        -- Shift+Enter: Always insert newline
+        ["<S-CR>"] = cmp.mapping(function(fallback)
+          focus_state = "none"
+          fallback()
+        end, { "i", "s" }),
       }),
       preselect = 'item',
       completion = { completeopt = 'menu,menuone,noinsert' },
@@ -621,6 +667,14 @@ require("lazy").setup({
       },
 
     })
+    
+    -- Reset focus state when leaving insert mode or changing position
+    vim.api.nvim_create_autocmd({"InsertLeave", "CursorMoved", "CursorMovedI"}, {
+      callback = function()
+        focus_state = "none"
+      end,
+    })
+    
     end,
   },
     -- LSP
