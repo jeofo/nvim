@@ -1,0 +1,713 @@
+-- Plugin Manager
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable",
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+  -- Colorscheme
+  {
+    "catppuccin/nvim", 
+    name = "catppuccin", 
+    priority = 1000,
+    config = function()
+      vim.cmd('colorscheme catppuccin-mocha')
+    end
+  },
+  -- File explorer, load on startup
+	{
+		"nvim-tree/nvim-tree.lua",
+		lazy = false,
+		priority = 1000,
+		dependencies = {
+			"echasnovski/mini.icons",
+		},
+		init = function()
+			require("mini.icons").setup()
+			require("mini.icons").mock_nvim_web_devicons()
+		end,
+		opts = {
+			filters = {
+				dotfiles = false,
+				custom = { ".DS_Store" },
+			},
+			hijack_netrw = true,
+			disable_netrw = true,
+			hijack_cursor = true,
+			sync_root_with_cwd = true,
+			update_focused_file = { enable = true, update_root = false },
+			actions = {
+				open_file = {
+					quit_on_open = true,
+				},
+			},
+
+			on_attach = function(bufnr)
+				local api = require("nvim-tree.api")
+
+				api.config.mappings.default_on_attach(bufnr)
+
+				local function map(lhs, rhs, desc)
+					vim.keymap.set("n", lhs, rhs, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = desc })
+				end
+
+				vim.keymap.set("n", "O", function()
+					local node = api.tree.get_node_under_cursor()
+					if node then
+						vim.fn.jobstart({ "open", "-R", node.absolute_path }, { detach = true })
+					end
+				end, { buffer = bufnr, desc = "Reveal in Finder" })
+
+        -- NAVIGATION MAPPING FIX for NvimTree
+        -- Physical J (n) -> Down
+        map("e", "j", "Down", { remap = true })
+				map("u", "k", "Up",   { remap = true })
+				map("E", "5j", "Down", { remap = true })
+				map("U", "5k", "Up",   { remap = true })
+				map("R", api.tree.reload,"Refresh")
+
+				map("R", api.tree.reload,"Refresh")
+			end,
+			view = {
+				width = 34,
+				side = "left",
+				preserve_window_proportions = true,
+			},
+			renderer = {
+				highlight_git = true,
+				highlight_diagnostics = true,
+				group_empty = true,
+				icons = {
+					show = {
+						git = true,
+						diagnostics = true,
+					},
+				},
+			},
+			git = {
+				enable = true,
+				ignore = false,
+				timeout = 500,
+			},
+			diagnostics = {
+				enable = true,
+				show_on_dirs = true,
+				show_on_open_dirs = true,
+				debounce_delay = 50,
+				icons = {
+					hint = "󰌶",
+					info = "",
+					warning = "",
+					error = "",
+				},
+			},
+		},
+		keys = {
+			{ "<leader>t", "<cmd>NvimTreeToggle<cr>", desc = "Toggle NvimTree" },
+		},
+	},
+  -- Status line
+  {
+    "itchyny/lightline.vim",
+    event = "VeryLazy",
+    init = function()
+      vim.g.lightline = {
+        colorscheme = 'wombat',
+        active = {
+          left = {
+            { 'mode', 'paste' },
+            { 'readonly', 'filename', 'modified'}
+          },
+          right = {
+            { 'lineinfo' },
+            { 'percent' },
+            { 'fileformat', 'fileencoding', 'filetype' },
+          }
+        },
+      }
+    end,
+  },
+
+  -- Syntax highlighting and parsing
+  {
+    'nvim-treesitter/nvim-treesitter',
+    build = ':TSUpdate',
+    event = { "BufReadPost", "BufNewFile" },
+    config = function()
+      require('nvim-treesitter.configs').setup({
+        ensure_installed = { "c", "typescript", "lua", "python", "javascript" },
+        sync_install = false,
+        auto_install = true,
+        highlight = {
+          enable = true,
+          disable = {},
+        },
+      })
+    end,
+  },
+
+  -- Rainbow delimiters
+  {
+    "HiPhish/rainbow-delimiters.nvim",
+    event = { "BufReadPost", "BufNewFile" },
+  },
+
+  -- Git diff view
+  {
+    "sindrets/diffview.nvim",
+    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
+  },
+
+  -- Comments
+  {
+    "scrooloose/nerdcommenter",
+    keys = {
+      { "<Leader>a", "<plug>NERDCommenterToggle", mode = { "n", "v" }, desc = "Toggle comment" },
+      { "<Leader>A", "<plug>NERDCommenterSexy", mode = { "n", "v" }, desc = "Sexy comment" },
+    },
+  },
+
+  -- Icons
+  {
+    "echasnovski/mini.icons",
+    opts = {},
+    lazy = true,
+    specs = {
+      { "nvim-tree/nvim-web-devicons", enabled = true, optional = true },
+    },
+    init = function()
+      package.preload["nvim-web-devicons"] = function()
+        require("mini.icons").mock_nvim_web_devicons()
+        return package.loaded["nvim-web-devicons"]
+      end
+    end,
+  },
+
+  -- LaTeX support
+  {
+    "lervag/vimtex",
+    ft = "tex",
+    keys = {
+      { "<Leader>L", ":VimtexTocToggle<CR>", desc = "Toggle LaTeX TOC" },
+      { "<Leader>v", ":VimtexView<CR>", desc = "View LaTeX" },
+    },
+    init = function()
+      vim.g.tex_flavor = 'latex'
+      vim.g.vimtex_view_method = 'skim'
+      vim.g.vimtex_view_skim_sync = 1
+      vim.g.vimtex_view_skim_activate = 1
+    end,
+    config = function()
+      local function write_server_name()
+        local nvim_server_file = (vim.fn.has('win32') == 1 and os.getenv('TEMP') or '/tmp') .. '/vimtexserver.txt'
+        vim.fn.writefile({vim.fn.serverstart()}, nvim_server_file)
+      end
+
+      vim.api.nvim_create_augroup('vimtex_common', { clear = true })
+      vim.api.nvim_create_autocmd('FileType', {
+        group = 'vimtex_common',
+        pattern = 'tex',
+        callback = write_server_name,
+      })
+    end,
+  },
+
+  -- CSS color preview
+  {
+    "ap/vim-css-color",
+    ft = {"css", "scss", "sass", "less"},
+  },
+
+  -- Markdown preview
+  {
+    "iamcco/markdown-preview.nvim",
+    build = 'cd app && yarn install',
+    ft = 'markdown',
+  },
+
+  -- Telescope fuzzy finder
+  {
+    "nvim-telescope/telescope.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    cmd = "Telescope",
+    keys = {
+      { "<leader><leader>", ":Telescope commands<CR>", desc = "Command palette" },
+      { "<leader>ff", ":Telescope current_buffer_fuzzy_find<CR>", desc = "Fuzzy find in buffer" },
+      { "<leader>fF", ":Telescope live_grep search_dirs=./<CR>", desc = "Live grep" },
+      { "<leader>fr", ":Telescope lsp_references<CR>", desc = "LSP references" },
+      { "<leader>fz", ":Telescope spell_suggest<CR>", desc = "Spell suggestions" },
+      { "<leader>fb", ":Telescope buffers<CR>", desc = "Buffers" },
+      { "<leader>fg", ":Telescope git_status<CR>", desc = "Git status" },
+      { "<Leader><CR>", ":Telescope find_files<CR>", desc = "Find files" },
+    },
+    config = function()
+      require('telescope').setup({
+        defaults = {
+          file_ignore_patterns = {
+            "node_modules",
+            "target",
+            "build",
+            "build/.*",
+            "dist",
+          }
+        },
+        pickers = {
+          find_files = {
+            hidden = true,
+            no_ignore = true,
+            no_ignore_parent = true,
+            find_command = { 
+              "rg", "--files", "--hidden", "--glob", "!.git/*", 
+              "--glob", "!node_modules/*", "--glob", "!target/*", 
+              "--glob", "!build/*", "--glob", "!dist/*"
+            }
+          }
+        }
+      })
+    end,
+  },
+
+  -- LSP
+  {
+    'VonHeikemen/lsp-zero.nvim',
+    branch = 'v3.x',
+    lazy = true,
+    config = false,
+    init = function()
+      vim.g.lsp_zero_extend_cmp = 0
+      vim.g.lsp_zero_extend_lspconfig = 0
+    end,
+  },
+
+  -- Mason LSP server manager
+  {
+    'williamboman/mason.nvim',
+    lazy = false,
+    opts = {
+      registries = {
+        'github:mason-org/mason-registry',
+      },
+      ui = {
+        icons = {
+          package_installed = "✓",
+          package_pending = "➜",
+          package_uninstalled = "✗"
+        }
+      }
+    },
+  },
+
+  -- Autocompletion
+{
+  'hrsh7th/nvim-cmp',
+  event = 'InsertEnter',
+  dependencies = {
+    { 'hrsh7th/cmp-nvim-lsp' },
+    { 'hrsh7th/cmp-buffer' },
+    { 'hrsh7th/cmp-path' }
+
+  },
+  config = function()
+    local cmp = require('cmp')
+    
+    -- State tracking for tab behavior
+    local focus_state = "none" -- "none", "copilot", "cmp"
+
+    cmp.setup({
+      sources = {
+        { name = 'nvim_lsp', priority = 800 },
+        { name = 'buffer', priority = 500 },
+        { name = 'path', priority = 300 },
+			{ name = 'cmp_r', priority = 700 },
+      },
+      formatting = {
+        fields = { "abbr", "menu" },
+        format = function(entry, vim_item)
+          vim_item.menu = ({
+            nvim_lsp = "[LSP]",
+            buffer = "[Buffer]",
+            path = "[Path]",
+          })[entry.source.name]
+          return vim_item
+        end,
+      },
+      mapping = cmp.mapping.preset.insert({
+        -- Override default <C-n> and <C-p> mappings to use fallback
+        -- Physical Ctrl-J (types Ctrl-n) -> Next
+        ["<C-n>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_next_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        -- Physical Ctrl-K (types Ctrl-e) -> Prev (Added for Colemak K=Up)
+        ["<C-e>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_prev_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        -- Physical Ctrl-R (types Ctrl-p) -> Prev (Standard)
+        ["<C-p>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_prev_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        
+        -- TAB: Toggle between copilot and cmp when both available, then navigate cmp
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
+          local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+          local has_cmp = cmp.visible()
+          
+          -- Case 1: Both Copilot and CMP are available
+          if has_copilot and has_cmp then
+            if focus_state == "none" then
+              -- First tab: select first CMP item and switch focus to CMP
+              focus_state = "cmp"
+              cmp.select_next_item()
+              return
+            elseif focus_state == "cmp" then
+              -- Subsequent tabs: navigate down CMP menu
+              cmp.select_next_item()
+              return
+            end
+          end
+          
+          -- Case 2: Only Copilot available
+          if has_copilot and not has_cmp then
+            local copilot_keys = vim.fn["copilot#Accept"]("")
+            if copilot_keys ~= "" then
+              vim.api.nvim_feedkeys(copilot_keys, "i", true)
+              focus_state = "none"
+              return
+            end
+          end
+          
+          -- Case 3: Only CMP available
+          if not has_copilot and has_cmp then
+            focus_state = "cmp"
+            cmp.select_next_item()
+            return
+          end
+          
+          -- Case 4: CMP is visible and we're already in CMP focus mode
+          if has_cmp and focus_state == "cmp" then
+            cmp.select_next_item()
+            return
+          end
+          
+          -- Case 5: Nothing available, try to trigger CMP
+          if not has_copilot and not has_cmp then
+            cmp.complete()
+            focus_state = "cmp"
+            return
+          end
+          
+          -- Fallback
+          focus_state = "none"
+          fallback()
+        end, { "i", "s" }),
+
+        -- Shift-Tab: Navigate up in CMP or fallback
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            focus_state = "cmp"
+            cmp.select_prev_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+
+        -- Enter: Use CMP if item is selected, otherwise prioritize Copilot
+        ["<CR>"] = cmp.mapping({
+          i = function(fallback)
+            local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
+            local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+            
+            -- If CMP is visible and has a selected item, use CMP
+            if cmp.visible() and cmp.get_active_entry() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+              focus_state = "none"
+              return
+            end
+            
+            -- If no CMP selection but Copilot available, use Copilot
+            if has_copilot then
+              local copilot_keys = vim.fn["copilot#Accept"]("")
+              if copilot_keys ~= "" then
+                vim.api.nvim_feedkeys(copilot_keys, "i", true)
+                focus_state = "none"
+                return
+              end
+            end
+            
+            -- If CMP is visible but no item selected, still try to confirm
+            if cmp.visible() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+              focus_state = "none"
+              return
+            end
+            
+            -- Reset focus state and fallback (normal Enter behavior)
+            focus_state = "none"
+            fallback()
+          end,
+          s = cmp.mapping.confirm({ select = true }),
+          c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
+        }),
+        
+        -- Shift+Enter: Always insert newline
+        ["<S-CR>"] = cmp.mapping(function(fallback)
+          focus_state = "none"
+          fallback()
+        end, { "i", "s" }),
+      }),
+      preselect = 'item',
+      completion = { completeopt = 'menu,menuone,noinsert' },
+      window = {
+        completion = cmp.config.window.bordered(),
+        documentation = cmp.config.window.bordered(),
+      },
+
+    })
+    
+    -- Reset focus state when leaving insert mode or changing position
+    vim.api.nvim_create_autocmd({"InsertLeave", "CursorMoved", "CursorMovedI"}, {
+      callback = function()
+        focus_state = "none"
+      end,
+    })
+    
+    end,
+  },
+    -- LSP
+  {
+    'neovim/nvim-lspconfig',
+    cmd = {'LspInfo', 'LspInstall', 'LspStart'},
+    event = {'BufReadPre', 'BufNewFile'},
+    dependencies = {
+      {'hrsh7th/cmp-nvim-lsp'},
+      {'williamboman/mason-lspconfig.nvim'},
+    },
+    config = function()
+      local lsp_zero = require('lsp-zero')
+      lsp_zero.extend_lspconfig()
+
+      lsp_zero.on_attach(function(client, bufnr)
+        lsp_zero.default_keymaps({buffer = bufnr})
+        vim.keymap.set('n', 'T', '<cmd>lua vim.lsp.buf.hover({ buffer = "rounded" })<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<LEADER>dd', ':lua vim.diagnostic.open_float(0, {scope="line"})<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<LEADER>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<LEADER>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<LEADER>fd', '<cmd>lua vim.lsp.buf.definition()<CR>', {buffer = bufnr})
+				vim.keymap.set("n", "<LEADER>=", vim.diagnostic.goto_next)
+				vim.keymap.set("n", "<LEADER-", vim.diagnostic.goto_prev)
+      end)
+
+      vim.diagnostic.config({virtual_text = false})
+
+      lsp_zero.set_sign_icons({
+        error = '✘',
+        warn = '▲',
+        hint = '⚑',
+        info = '»'
+      })
+
+      require('mason-lspconfig').setup({
+        handlers = {
+          lsp_zero.default_setup,
+        },
+      })
+    end
+  },
+
+  -- Formatter
+  {
+    'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    cmd = { 'ConformInfo' },
+    config = function()
+      require("conform").setup({
+        formatters_by_ft = {
+          python = { "ruff" },
+          go = { "gofmt" },
+          javascript = { "prettier" },
+          typescript = { "prettier" },
+          javascriptreact = { "prettier" },
+          typescriptreact = { "prettier" },
+          json = { "prettier" },
+          html = { "prettier" },
+          css = { "prettier" },
+          scss = { "prettier" },
+          sass = { "prettier" },
+          less = { "prettier" },
+          markdown = { "prettier" },
+        },
+        format_on_save = {
+          timeout_ms = 500,
+          lsp_fallback = false,
+        },
+      })
+    end,
+  },
+
+  -- Code runner
+  {
+    "CRAG666/code_runner.nvim",
+    cmd = "RunCode",
+    keys = {
+      { "<Leader>rr", ":RunCode<CR>", desc = "Run code" }
+    },
+    config = function()
+      require('code_runner').setup({
+        filetype = {
+          python = "python3 -u",
+          typescript = "",
+        },
+      })
+    end,
+  },
+
+  -- Comment box
+  {
+    "LudoPinelli/comment-box.nvim",
+    cmd = { "CBccbox", "CBacbox", "CBllbox", "CBlcbox" },
+  },
+
+  -- Smart splits for window resizing
+  {
+    'mrjones2014/smart-splits.nvim',
+    keys = {
+      { '<left>', function() require('smart-splits').resize_left() end, desc = "Resize left" },
+      { '<down>', function() require('smart-splits').resize_down() end, desc = "Resize down" },
+      { '<up>', function() require('smart-splits').resize_up() end, desc = "Resize up" },
+      { '<right>', function() require('smart-splits').resize_right() end, desc = "Resize right" },
+    },
+  },
+
+  -- GitHub Copilot
+  {
+    "github/copilot.vim",
+		lazy = false,
+		priority = 1000,
+    init = function()
+      vim.g.copilot_no_tab_map = true
+      vim.g.copilot_assume_mapped = true
+      vim.g.copilot_enabled = 1
+    end,
+  },
+
+  -- Iron.nvim to run REPL
+  {"Vigemus/iron.nvim",
+		ft = { "python", "sh", "r", "rmd", "quarto" },
+    config = function()
+      local iron = require("iron.core")
+      local view = require("iron.view")
+      local common = require("iron.fts.common")
+      iron.setup {
+        config = {
+          scratch_repl = true,
+          repl_definition = {
+            sh = {
+              command = {"zsh"}
+            },
+            python = {
+              command = { "python3" },  -- or { "ipython", "--no-autoindent" }
+              format = common.bracketed_paste_python,
+              block_dividers = { "# %%", "#%%" },
+              env = {PYTHON_BASIC_REPL = "1"} --this is needed for python3.13 and up.
+            }
+          },
+          repl_filetype = function(bufnr, ft)
+            return ft
+          end
+        },
+          dap_integration = true,
+          repl_open_cmd = view.split.vertical.botright(40),
+        
+        highlight = {
+          italic = true
+        },
+        ignore_blank_lines = true, -- ignore blank lines when sending visual select lines
+      }
+    end,
+  },
+
+	-- Quarto support
+  {
+    "quarto-dev/quarto-nvim",
+    dependencies = {
+      "jmbuhr/otter.nvim",
+      "nvim-treesitter/nvim-treesitter",
+    },
+    ft = { "quarto" },
+    config = function()
+      require('quarto').setup{
+        debug = false,
+        closePreviewOnExit = true,
+        lspFeatures = {
+          enabled = true,
+          chunks = "curly",
+          languages = { "r", "python", "julia", "bash", "html" },
+          diagnostics = {
+            enabled = true,
+            triggers = { "BufWritePost" },
+          },
+          completion = {
+            enabled = true,
+          },
+        },
+        codeRunner = {
+          enabled = true,
+          default_method = "iron", 
+          ft_runners = {},
+          never_run = { 'yaml' },
+        },
+      }
+      -- Quarto runner keymaps
+      local runner = require("quarto.runner")
+      vim.keymap.set("n", "<localleader>rc", runner.run_cell,  { desc = "run cell", silent = true })
+      vim.keymap.set("n", "<localleader>ra", runner.run_above, { desc = "run cell and above", silent = true })
+      vim.keymap.set("n", "<localleader>rA", runner.run_all,   { desc = "run all cells", silent = true })
+      vim.keymap.set("n", "<localleader>rl", runner.run_line,  { desc = "run line", silent = true })
+      vim.keymap.set("v", "<localleader>r",  runner.run_range, { desc = "run visual range", silent = true })
+    end,
+  },
+	{
+    'jmbuhr/otter.nvim',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+    },
+		ft = { "quarto" },
+    config = function()
+      require('otter').setup({
+        lsp = {
+          hover = {
+            border = 'rounded',
+          },
+          completion = {
+            border = 'rounded',
+          },
+        },
+        buffers = {
+          set_filetype = true,
+        },
+        handle_leading_whitespace = true,
+      })
+    end,
+	},
+})
+
