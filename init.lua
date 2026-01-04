@@ -109,8 +109,8 @@ vim.keymap.set({ 'n', 'v' }, '<Leader>U', 'zR', opts)
 -- Buffer Management
 vim.keymap.set({ 'n', 'v' }, '<Leader>Q', ':w | %bd | e#<CR><CR>', opts)
 vim.keymap.set({ 'n', 'v' }, '<Leader>q', ':bdelete<CR>', opts)
-vim.keymap.set({ 'n', 'v' }, '[[', ':bprevious<CR>', opts)
-vim.keymap.set({ 'n', 'v' }, ']]', ':bnext<CR>', opts)
+vim.keymap.set({ 'n', 'v' }, '[[', ':bprevious<CR>', { noremap = true, silent = true, nowait = true })
+vim.keymap.set({ 'n', 'v' }, ']]', ':bnext<CR>', { noremap = true, silent = true, nowait = true })
 
 -- Cursor Movement (Colemak-style)
 vim.keymap.set({ 'n', 'v' }, 'u', 'k', opts)
@@ -519,9 +519,6 @@ require("lazy").setup({
   },
   config = function()
     local cmp = require('cmp')
-    
-    -- State tracking for tab behavior
-    local focus_state = "none" -- "none", "copilot", "cmp"
 
     cmp.setup({
       sources = {
@@ -542,135 +539,53 @@ require("lazy").setup({
         end,
       },
       mapping = cmp.mapping.preset.insert({
-        -- Override default <C-n> and <C-p> mappings to use fallback
-        ["<C-n>"] = cmp.mapping(function(fallback)
-          fallback()
-        end, { "i", "s" }),
-        ["<C-p>"] = cmp.mapping(function(fallback)
-          fallback()
-        end, { "i", "s" }),
-        
-        -- TAB: Toggle between copilot and cmp when both available, then navigate cmp
+        -- Tab: Fallback to let Copilot handle it
         ["<Tab>"] = cmp.mapping(function(fallback)
-          local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
-          local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
-          local has_cmp = cmp.visible()
-          
-          -- Case 1: Both Copilot and CMP are available
-          if has_copilot and has_cmp then
-            if focus_state == "none" then
-              -- First tab: select first CMP item and switch focus to CMP
-              focus_state = "cmp"
-              cmp.select_next_item()
-              return
-            elseif focus_state == "cmp" then
-              -- Subsequent tabs: navigate down CMP menu
-              cmp.select_next_item()
-              return
-            end
-          end
-          
-          -- Case 2: Only Copilot available - Tab does nothing (no autocomplete)
-          if has_copilot and not has_cmp then
-            -- Tab should not autocomplete Copilot, just fallback
-            focus_state = "none"
-            fallback()
-            return
-          end
-          
-          -- Case 3: Only CMP available
-          if not has_copilot and has_cmp then
-            focus_state = "cmp"
-            cmp.select_next_item()
-            return
-          end
-          
-          -- Case 4: CMP is visible and we're already in CMP focus mode
-          if has_cmp and focus_state == "cmp" then
-            cmp.select_next_item()
-            return
-          end
-          
-          -- Case 5: Nothing available, try to trigger CMP
-          if not has_copilot and not has_cmp then
-            cmp.complete()
-            focus_state = "cmp"
-            return
-          end
-          
-          -- Fallback
-          focus_state = "none"
           fallback()
         end, { "i", "s" }),
 
-        -- Shift-Tab: Navigate up in CMP or fallback
+        -- Shift-Tab: Insert actual tab character
         ["<S-Tab>"] = cmp.mapping(function(fallback)
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", true)
+        end, { "i", "s" }),
+
+        -- Arrow keys: Navigate CMP menu
+        ["<Down>"] = cmp.mapping(function(fallback)
           if cmp.visible() then
-            focus_state = "cmp"
+            cmp.select_next_item()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+
+        ["<Up>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
             cmp.select_prev_item()
           else
             fallback()
           end
         end, { "i", "s" }),
 
-        -- Enter: Context-dependent behavior
+        -- Enter: Always confirm CMP selection if visible
         ["<CR>"] = cmp.mapping({
           i = function(fallback)
-            local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
-            local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
-            local has_cmp = cmp.visible()
-            
-            -- Case 1: Only Copilot available - Enter creates new line
-            if has_copilot and not has_cmp then
-              focus_state = "none"
+            if cmp.visible() then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+            else
               fallback()
-              return
             end
-            
-            -- Case 2: Only CMP available - Enter selects CMP item (no new line)
-            if not has_copilot and has_cmp then
-              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
-              focus_state = "none"
-              return
-            end
-            
-            -- Case 3: Both available - Enter selects CMP item (no new line)
-            if has_copilot and has_cmp then
-              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
-              focus_state = "none"
-              return
-            end
-            
-            -- Case 4: Nothing available - normal Enter behavior (new line)
-            focus_state = "none"
-            fallback()
           end,
           s = cmp.mapping.confirm({ select = true }),
           c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
         }),
         
-        -- Shift+Enter: Accept Copilot suggestion
-        ["<S-CR>"] = cmp.mapping({
-          i = function(fallback)
-            local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
-            local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
-            
-            -- If Copilot available, use it
-            if has_copilot then
-              local copilot_keys = vim.fn["copilot#Accept"]("")
-              if copilot_keys ~= "" then
-                vim.api.nvim_feedkeys(copilot_keys, "i", true)
-                focus_state = "none"
-                return
-              end
-            end
-            
-            -- If no Copilot, fallback to normal behavior
-            focus_state = "none"
-            fallback()
-          end,
-          s = function(fallback) fallback() end,
-        }),
+        -- Shift-Enter: Insert newline
+        ["<S-CR>"] = cmp.mapping(function(fallback)
+          fallback()
+        end, { "i", "s" }),
+        
+        -- Ctrl-Space: Manually trigger completion
+        ["<C-Space>"] = cmp.mapping.complete(),
       }),
       preselect = 'item',
       completion = { completeopt = 'menu,menuone,noinsert' },
@@ -679,13 +594,6 @@ require("lazy").setup({
         documentation = cmp.config.window.bordered(),
       },
 
-    })
-    
-    -- Reset focus state when leaving insert mode or changing position
-    vim.api.nvim_create_autocmd({"InsertLeave", "CursorMoved", "CursorMovedI"}, {
-      callback = function()
-        focus_state = "none"
-      end,
     })
     
     end,
@@ -777,18 +685,37 @@ require("lazy").setup({
     },
   },
 
-  -- GitHub Copilot
+  -- GitHub Copilot LSP
   {
-    "github/copilot.vim",
-		lazy = false,
-		priority = 1000,
-    init = function()
-      vim.g.copilot_no_tab_map = true
-      vim.g.copilot_assume_mapped = true
-      vim.g.copilot_enabled = 1
+    "zbirenbaum/copilot.lua",
+    cmd = "Copilot",
+    event = "InsertEnter",
+    config = function()
+      require("copilot").setup({
+        suggestion = {
+          enabled = true,
+          auto_trigger = true,
+          keymap = {
+            accept = "<Tab>",      -- Tab accepts Copilot suggestion
+            accept_word = false,
+            accept_line = false,
+            next = "<M-]>",
+            prev = "<M-[>",
+            dismiss = "<C-]>",
+          },
+        },
+        panel = { enabled = false },
+        filetypes = {
+          yaml = false,
+          markdown = false,
+          help = false,
+          gitcommit = false,
+          gitrebase = false,
+          ["."] = false,
+        },
+      })
     end,
   },
-
   -- Iron.nvim to run REPL
   {"Vigemus/iron.nvim",
 		ft = { "python", "sh", "r", "rmd", "quarto" },
@@ -917,3 +844,25 @@ vim.api.nvim_create_autocmd('BufReadPost', {
   end,
   desc = "Activate Otter for Quarto files"
 })
+
+
+
+local yank = require 'custom.yank'
+
+-- Normal mode: yank file path
+vim.keymap.set('n', '<leader>ya', function()
+  yank.yank_path(yank.get_buffer_absolute(), 'absolute')
+end, { desc = '[Y]ank [A]bsolute path to clipboard' })
+
+vim.keymap.set('n', '<leader>yr', function()
+  yank.yank_path(yank.get_buffer_cwd_relative(), 'relative')
+end, { desc = '[Y]ank [R]elative path to clipboard' })
+
+vim.keymap.set('x', '<leader>y', function()
+  local esc = vim.api.nvim_replace_termcodes('<Esc>', true, false, true)
+  vim.api.nvim_feedkeys(esc, 'nx', false)
+  yank.yank_visual_with_path(yank.get_buffer_cwd_relative(), 'relative')
+end, { silent = true, desc = '[Y]ank selection with [R]elative path' })
+
+
+require 'custom.hotreload'
