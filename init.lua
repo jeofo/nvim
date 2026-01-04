@@ -570,14 +570,12 @@ require("lazy").setup({
             end
           end
           
-          -- Case 2: Only Copilot available
+          -- Case 2: Only Copilot available - Tab does nothing (no autocomplete)
           if has_copilot and not has_cmp then
-            local copilot_keys = vim.fn["copilot#Accept"]("")
-            if copilot_keys ~= "" then
-              vim.api.nvim_feedkeys(copilot_keys, "i", true)
-              focus_state = "none"
-              return
-            end
+            -- Tab should not autocomplete Copilot, just fallback
+            focus_state = "none"
+            fallback()
+            return
           end
           
           -- Case 3: Only CMP available
@@ -615,20 +613,49 @@ require("lazy").setup({
           end
         end, { "i", "s" }),
 
-        -- Enter: Use CMP if item is selected, otherwise prioritize Copilot
+        -- Enter: Context-dependent behavior
         ["<CR>"] = cmp.mapping({
           i = function(fallback)
             local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
             local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+            local has_cmp = cmp.visible()
             
-            -- If CMP is visible and has a selected item, use CMP
-            if cmp.visible() and cmp.get_active_entry() then
+            -- Case 1: Only Copilot available - Enter creates new line
+            if has_copilot and not has_cmp then
+              focus_state = "none"
+              fallback()
+              return
+            end
+            
+            -- Case 2: Only CMP available - Enter selects CMP item (no new line)
+            if not has_copilot and has_cmp then
               cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
               focus_state = "none"
               return
             end
             
-            -- If no CMP selection but Copilot available, use Copilot
+            -- Case 3: Both available - Enter selects CMP item (no new line)
+            if has_copilot and has_cmp then
+              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
+              focus_state = "none"
+              return
+            end
+            
+            -- Case 4: Nothing available - normal Enter behavior (new line)
+            focus_state = "none"
+            fallback()
+          end,
+          s = cmp.mapping.confirm({ select = true }),
+          c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
+        }),
+        
+        -- Shift+Enter: Accept Copilot suggestion
+        ["<S-CR>"] = cmp.mapping({
+          i = function(fallback)
+            local copilot_suggestion = vim.fn["copilot#GetDisplayedSuggestion"]()
+            local has_copilot = copilot_suggestion.text and copilot_suggestion.text ~= ""
+            
+            -- If Copilot available, use it
             if has_copilot then
               local copilot_keys = vim.fn["copilot#Accept"]("")
               if copilot_keys ~= "" then
@@ -638,26 +665,12 @@ require("lazy").setup({
               end
             end
             
-            -- If CMP is visible but no item selected, still try to confirm
-            if cmp.visible() then
-              cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true })
-              focus_state = "none"
-              return
-            end
-            
-            -- Reset focus state and fallback (normal Enter behavior)
+            -- If no Copilot, fallback to normal behavior
             focus_state = "none"
             fallback()
           end,
-          s = cmp.mapping.confirm({ select = true }),
-          c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
+          s = function(fallback) fallback() end,
         }),
-        
-        -- Shift+Enter: Always insert newline
-        ["<S-CR>"] = cmp.mapping(function(fallback)
-          focus_state = "none"
-          fallback()
-        end, { "i", "s" }),
       }),
       preselect = 'item',
       completion = { completeopt = 'menu,menuone,noinsert' },
@@ -747,25 +760,7 @@ require("lazy").setup({
       })
     end,
   },
-
-  -- Code runner
-  {
-    "CRAG666/code_runner.nvim",
-    cmd = "RunCode",
-    keys = {
-      { "<Leader>rr", ":RunCode<CR>", desc = "Run code" }
-    },
-    config = function()
-      require('code_runner').setup({
-        filetype = {
-          python = "python3 -u",
-          typescript = "",
-        },
-      })
-    end,
-  },
-
-  -- Comment box
+   -- Comment box
   {
     "LudoPinelli/comment-box.nvim",
     cmd = { "CBccbox", "CBacbox", "CBllbox", "CBlcbox" },
@@ -819,13 +814,19 @@ require("lazy").setup({
             return ft
           end,
           dap_integration = true,
-          repl_open_cmd = view.split.vertical.botright(40),
+          repl_open_cmd = view.split.vertical("30%")
         },
         highlight = {
           italic = true
         },
         ignore_blank_lines = true, -- ignore blank lines when sending visual select lines
       }
+      
+      -- Set up keymaps manually to ensure leader key works properly
+      vim.keymap.set("n", "<leader>rr", function() iron.send_line() end, { desc = "Iron send motion" })
+      vim.keymap.set("v", "<leader>rr", function() iron.visual_send() end, { desc = "Iron visual send" })
+      vim.keymap.set("n", "<leader>rc", function() iron.send(nil, string.char(12)) end, { desc = "Iron clear REPL" })
+      vim.keymap.set("n", "<leader>rf", function() iron.send_file() end, { desc = "Iron send motion" })
     end,
   },
 
@@ -866,7 +867,7 @@ require("lazy").setup({
       vim.keymap.set("n", "<localleader>ra", runner.run_above, { desc = "run cell and above", silent = true })
       vim.keymap.set("n", "<localleader>rA", runner.run_all,   { desc = "run all cells", silent = true })
       vim.keymap.set("n", "<localleader>rl", runner.run_line,  { desc = "run line", silent = true })
-      vim.keymap.set("v", "<localleader>r",  runner.run_range, { desc = "run visual range", silent = true })
+      vim.keymap.set("v", "<localleader>rv",  runner.run_range, { desc = "run visual range", silent = true })
     end,
   },
 	{
