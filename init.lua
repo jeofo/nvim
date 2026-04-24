@@ -251,7 +251,7 @@ require("lazy").setup({
 			update_focused_file = { enable = true, update_root = false },
 			actions = {
 				open_file = {
-					quit_on_open = true,
+					quit_on_open = false,
 				},
 			},
 
@@ -259,6 +259,7 @@ require("lazy").setup({
 				local api = require("nvim-tree.api")
 
 				api.config.mappings.default_on_attach(bufnr)
+				api.update_to_buf_dir = { enable = false }
 
 				local function map(lhs, rhs, desc)
 					vim.keymap.set("n", lhs, rhs, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = desc })
@@ -316,6 +317,10 @@ require("lazy").setup({
 			{ "<leader>t", "<cmd>NvimTreeToggle<cr>", desc = "Toggle NvimTree" },
 		},
 	},
+	-- Directory buffer
+	{
+		"elihunter173/dirbuf.nvim",
+	},
   -- Status line
   {
     "itchyny/lightline.vim",
@@ -360,6 +365,17 @@ require("lazy").setup({
   {
     "HiPhish/rainbow-delimiters.nvim",
     event = { "BufReadPost", "BufNewFile" },
+    init = function()
+      vim.g.rainbow_delimiters = {
+        condition = function(bufnr)
+          local ft = vim.bo[bufnr].filetype
+          local lang = vim.treesitter.language.get_lang(ft)
+          if not lang then return false end
+          local ok, parser = pcall(vim.treesitter.get_parser, bufnr, lang)
+          return ok and parser ~= nil
+        end,
+      }
+    end,
   },
 
   -- Git diff view
@@ -435,6 +451,20 @@ require("lazy").setup({
     ft = 'markdown',
   },
 
+  -- fff.nvim: fast file finder + live grep (replaces Telescope find_files/live_grep)
+  {
+    "dmtrKovalenko/fff.nvim",
+    build = function()
+      require("fff.download").download_or_build_binary()
+    end,
+    lazy = false,
+    keys = {
+      { "<Leader><CR>", function() require('fff').find_files() end, desc = "Find files" },
+      { "<leader>fF", function() require('fff').live_grep() end, desc = "Live grep" },
+    },
+    opts = {},
+  },
+
   -- Telescope fuzzy finder
   {
     "nvim-telescope/telescope.nvim",
@@ -443,12 +473,10 @@ require("lazy").setup({
     keys = {
       { "<leader><leader>", ":Telescope commands<CR>", desc = "Command palette" },
       { "<leader>ff", ":Telescope current_buffer_fuzzy_find<CR>", desc = "Fuzzy find in buffer" },
-      { "<leader>fF", ":Telescope live_grep search_dirs=./<CR>", desc = "Live grep" },
       { "<leader>fr", ":Telescope lsp_references<CR>", desc = "LSP references" },
       { "<leader>fz", ":Telescope spell_suggest<CR>", desc = "Spell suggestions" },
       { "<leader>fb", ":Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>fg", ":Telescope git_status<CR>", desc = "Git status" },
-      { "<Leader><CR>", ":Telescope find_files<CR>", desc = "Find files" },
     },
     config = function()
       require('telescope').setup({
@@ -507,6 +535,58 @@ require("lazy").setup({
     },
   },
 
+  -- Snippet engine
+  {
+    "L3MON4D3/LuaSnip",
+    version = "v2.*",
+    build = "make install_jsregexp",
+    config = function()
+      local ls = require("luasnip")
+      local config_path = vim.fn.stdpath("config")
+
+      -- Load standard filetype snippets (e.g., snippets/python.lua, snippets/lua.lua)
+      require("luasnip.loaders.from_lua").lazy_load({
+        paths = { config_path .. "/snippets" }
+      })
+
+      -- Add config path to package.path for typst snippets
+      package.path = config_path .. "/?.lua;" .. package.path
+
+      -- Load typst snippets
+      require("snippets.typst.math").setup({
+        modules = { "autosnips", "matrices", "general" }
+      })
+      require("snippets.typst.general").setup({
+        modules = { "general", "colors" }
+      })
+
+      -- Snippet navigation keymaps (always active)
+      vim.keymap.set({ "i", "s" }, "<Tab>", function()
+        if ls.expand_or_jumpable() then
+          ls.expand_or_jump()
+        else
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", true)
+        end
+      end, { silent = true })
+
+      vim.keymap.set({ "i", "s" }, "<S-Tab>", function()
+        if ls.jumpable(-1) then
+          ls.jump(-1)
+        else
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<S-Tab>", true, true, true), "n", true)
+        end
+      end, { silent = true })
+    end,
+  },
+
+{
+  "HakonHarnes/img-clip.nvim",
+  event = "VeryLazy",
+  opts = {},
+  keys = {
+    { "<leader>p", "<cmd>PasteImage<cr>", desc = "Paste image from system clipboard" },
+  },
+},
   -- Autocompletion
 {
   'hrsh7th/nvim-cmp',
@@ -514,24 +594,33 @@ require("lazy").setup({
   dependencies = {
     { 'hrsh7th/cmp-nvim-lsp' },
     { 'hrsh7th/cmp-buffer' },
-    { 'hrsh7th/cmp-path' }
-
+    { 'hrsh7th/cmp-path' },
+    { 'saadparwaiz1/cmp_luasnip' },
+    { 'L3MON4D3/LuaSnip' },
   },
   config = function()
     local cmp = require('cmp')
+    local luasnip = require('luasnip')
 
     cmp.setup({
+      snippet = {
+        expand = function(args)
+          luasnip.lsp_expand(args.body)
+        end,
+      },
       sources = {
         { name = 'nvim_lsp', priority = 800 },
+        { name = 'luasnip', priority = 750 },
+        { name = 'cmp_r', priority = 700 },
         { name = 'buffer', priority = 500 },
         { name = 'path', priority = 300 },
-			{ name = 'cmp_r', priority = 700 },
       },
       formatting = {
         fields = { "abbr", "menu" },
         format = function(entry, vim_item)
           vim_item.menu = ({
             nvim_lsp = "[LSP]",
+            luasnip = "[Snippet]",
             buffer = "[Buffer]",
             path = "[Path]",
           })[entry.source.name]
@@ -539,16 +628,6 @@ require("lazy").setup({
         end,
       },
       mapping = cmp.mapping.preset.insert({
-        -- Tab: Fallback to let Copilot handle it
-        ["<Tab>"] = cmp.mapping(function(fallback)
-          fallback()
-        end, { "i", "s" }),
-
-        -- Shift-Tab: Insert actual tab character
-        ["<S-Tab>"] = cmp.mapping(function(fallback)
-          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, true, true), "n", true)
-        end, { "i", "s" }),
-
         -- Arrow keys: Navigate CMP menu
         ["<Down>"] = cmp.mapping(function(fallback)
           if cmp.visible() then
@@ -647,24 +726,26 @@ require("lazy").setup({
     config = function()
       require("conform").setup({
         formatters_by_ft = {
-          python = { "ruff" },
+          python = { "ruff_format", "ruff_fix" },
           go = { "gofmt" },
-          javascript = { "prettier" },
-          typescript = { "prettier" },
-          javascriptreact = { "prettier" },
-          typescriptreact = { "prettier" },
-          json = { "prettier" },
-          html = { "prettier" },
-          css = { "prettier" },
-          scss = { "prettier" },
-          sass = { "prettier" },
-          less = { "prettier" },
+          javascript = { "biome" },
+          typescript = { "biome" },
+          javascriptreact = { "biome" },
+          typescriptreact = { "biome" },
+          json = { "biome" },
+          html = { "biome" },
+          css = { "biome" },
+          scss = { "biome" },
+          sass = { "biome" },
+          less = { "biome" },
           markdown = { "prettier" },
+          typst = { "typstyle" },
         },
         format_on_save = {
-          timeout_ms = 500,
-          lsp_fallback = false,
+          timeout_ms = 1000,
+          lsp_format = "never",
         },
+        notify_on_error = true,
       })
     end,
   },
