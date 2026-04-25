@@ -38,12 +38,18 @@ vim.opt.conceallevel = 0
 vim.opt.virtualedit = 'block'
 vim.opt.autoread = true
 vim.opt.winborder = "rounded"
+vim.opt.laststatus = 3
 vim.opt.iskeyword:remove('_')
 vim.opt.clipboard = 'unnamedplus'
 
 -- Auto-reload files when they change externally
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
   command = "checktime",
+})
+
+-- Clear jumplist on startup (don't persist across sessions)
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function() vim.cmd('clearjumps') end,
 })
 
 -- Persistent Undo
@@ -132,6 +138,30 @@ vim.keymap.set({ 'n', 'v' }, 'I', '$', opts)
 vim.keymap.set({ 'n', 'v' }, 'W', '5w', opts)
 vim.keymap.set({ 'n', 'v' }, 'B', '5b', opts)
 
+-- Jumplist navigation (skip nvim-tree buffers and the starting buffer)
+local function jump_skip_nvimtree(key)
+  local termcode = vim.api.nvim_replace_termcodes(key, true, false, true)
+  return function()
+    local start_buf = vim.api.nvim_get_current_buf()
+    for _ = 1, 100 do
+      local prev_buf = vim.api.nvim_get_current_buf()
+      local prev_line = vim.api.nvim_win_get_cursor(0)[1]
+      vim.api.nvim_feedkeys(termcode, 'nx', false)
+      local cur_buf = vim.api.nvim_get_current_buf()
+      local cur_line = vim.api.nvim_win_get_cursor(0)[1]
+      -- jumplist exhausted: cursor didn't move
+      if cur_buf == prev_buf and cur_line == prev_line then return end
+      local ft = vim.bo[cur_buf].filetype
+      local name = vim.api.nvim_buf_get_name(cur_buf)
+      local is_nvimtree = ft == 'NvimTree' or name:match('NvimTree_') ~= nil
+      -- stop when we land in a buffer that is not the starting one and not nvim-tree
+      if cur_buf ~= start_buf and not is_nvimtree then return end
+    end
+  end
+end
+vim.keymap.set('n', '<Tab>', jump_skip_nvimtree('<C-i>'), opts)
+vim.keymap.set('n', '<BS>', jump_skip_nvimtree('<C-o>'), opts)
+
 -- Delete w/out yanking
 vim.keymap.set('n', '<leader>d', '"_d', opts)
 vim.keymap.set('x', '<leader>d', '"_d', opts)
@@ -174,7 +204,7 @@ vim.keymap.set({ 'n', 'v' }, 'tmi', ':+tabmove<CR>', opts)
 
 -- Terminal
 vim.keymap.set({ 'n', 'v' }, '<Leader>/', ':set splitbelow<CR>:split<CR>:execute "resize".(winheight(0)/2)<CR>:term<CR>', opts)
-vim.keymap.set({ 'n', 'v' }, '<Leader>\\',':set splitright<CR>:vsplit<CR>:execute "vertical resize " .. float2nr(&columns * 0.3)<CR>:term<CR>',opts)
+vim.keymap.set({ 'n', 'v' }, '<Leader>\\',':set nosplitright<CR>:vsplit<CR>:set splitright<CR>:execute "vertical resize " .. float2nr(&columns * 0.3)<CR>:term<CR>',opts)
 
 -- Utilities
 vim.keymap.set({ 'n', 'v' }, '<Leader>sr', ':set relativenumber!<CR>', opts)
@@ -257,14 +287,11 @@ require("lazy").setup({
 
 			on_attach = function(bufnr)
 				local api = require("nvim-tree.api")
-
 				api.config.mappings.default_on_attach(bufnr)
 				api.update_to_buf_dir = { enable = false }
-
 				local function map(lhs, rhs, desc)
 					vim.keymap.set("n", lhs, rhs, { buffer = bufnr, noremap = true, silent = true, nowait = true, desc = desc })
 				end
-
 				vim.keymap.set("n", "O", function()
 					local node = api.tree.get_node_under_cursor()
 					if node then
@@ -278,10 +305,12 @@ require("lazy").setup({
 				map("E", "5j", "Down", { remap = true })
 				map("U", "5k", "Up",   { remap = true })
 				map("R", api.tree.reload,"Refresh")
+				map("[", api.tree.change_root_to_parent, "Up a directory")
+				map("]", api.tree.change_root_to_node, "Set as root")
 			end,
 			view = {
 				width = 34,
-				side = "left",
+				side = "right",
 				preserve_window_proportions = true,
 			},
 			renderer = {
@@ -290,7 +319,6 @@ require("lazy").setup({
 				group_empty = true,
 				icons = {
 					show = {
-						git = true,
 						diagnostics = true,
 					},
 				},
@@ -306,10 +334,10 @@ require("lazy").setup({
 				show_on_open_dirs = true,
 				debounce_delay = 50,
 				icons = {
-					hint = "󰌶",
-					info = "",
-					warning = "",
-					error = "",
+					error = '✘',
+					warning = '▲',
+					hint = '⚑',
+					info = '»'
 				},
 			},
 		},
@@ -342,21 +370,23 @@ require("lazy").setup({
       }
     end,
   },
-
-  -- Syntax highlighting and parsing
+  -- Syntax highlighting and parsing (nvim-treesitter main branch — Neovim 0.11+ rewrite)
   {
     'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
+    lazy = false,
     build = ':TSUpdate',
-    event = { "BufReadPost", "BufNewFile" },
     config = function()
-      require('nvim-treesitter.configs').setup({
-        ensure_installed = { "c", "typescript", "lua", "python", "javascript" },
-        sync_install = false,
-        auto_install = true,
-        highlight = {
-          enable = true,
-          disable = {},
-        },
+      local ensure = { 'c', 'lua', 'python', 'javascript', 'typescript', 'tsx', 'markdown', 'markdown_inline', 'vim', 'vimdoc', 'query', 'bash', 'json', 'yaml', 'html', 'css' }
+      require('nvim-treesitter').install(ensure)
+
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+          local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
+          if lang and pcall(vim.treesitter.start, args.buf, lang) then
+            vim.bo[args.buf].syntax = 'on'
+          end
+        end,
       })
     end,
   },
@@ -386,7 +416,7 @@ require("lazy").setup({
 
   -- Comments
   {
-    "scrooloose/nerdcommenter",
+		"scrooloose/nerdcommenter",
     keys = {
       { "<Leader>a", "<plug>NERDCommenterToggle", mode = { "n", "v" }, desc = "Toggle comment" },
       { "<Leader>A", "<plug>NERDCommenterSexy", mode = { "n", "v" }, desc = "Sexy comment" },
@@ -408,7 +438,6 @@ require("lazy").setup({
       end
     end,
   },
-
   -- LaTeX support
   {
     "lervag/vimtex",
@@ -437,13 +466,6 @@ require("lazy").setup({
       })
     end,
   },
-
-  -- CSS color preview
-  {
-    "ap/vim-css-color",
-    ft = {"css", "scss", "sass", "less"},
-  },
-
   -- Markdown preview
   {
     "iamcco/markdown-preview.nvim",
@@ -451,7 +473,12 @@ require("lazy").setup({
     ft = 'markdown',
   },
 
-  -- fff.nvim: fast file finder + live grep (replaces Telescope find_files/live_grep)
+  -- CSS color preview
+  {
+    "ap/vim-css-color",
+    ft = {"css", "scss", "sass", "less"},
+  },
+  -- fff.nvim: fast file finder + live grep
   {
     "dmtrKovalenko/fff.nvim",
     build = function()
@@ -460,11 +487,10 @@ require("lazy").setup({
     lazy = false,
     keys = {
       { "<Leader><CR>", function() require('fff').find_files() end, desc = "Find files" },
-      { "<leader>fF", function() require('fff').live_grep() end, desc = "Live grep" },
+      { "<leader>fF", function() require('fff').live_grep({ grep = { modes = { 'fuzzy', 'plain' } } }) end, desc = "Live grep" },
     },
     opts = {},
   },
-
   -- Telescope fuzzy finder
   {
     "nvim-telescope/telescope.nvim",
@@ -473,10 +499,11 @@ require("lazy").setup({
     keys = {
       { "<leader><leader>", ":Telescope commands<CR>", desc = "Command palette" },
       { "<leader>ff", ":Telescope current_buffer_fuzzy_find<CR>", desc = "Fuzzy find in buffer" },
+      { "<leader>fd", ":Telescope diagnostics<CR>", desc = "List diagnostics" },
       { "<leader>fr", ":Telescope lsp_references<CR>", desc = "LSP references" },
       { "<leader>fz", ":Telescope spell_suggest<CR>", desc = "Spell suggestions" },
       { "<leader>fb", ":Telescope buffers<CR>", desc = "Buffers" },
-      { "<leader>fg", ":Telescope git_status<CR>", desc = "Git status" },
+      { "<leader>fg", ":Telescope git_bcommits<CR>", desc = "Git commits" },
     },
     config = function()
       require('telescope').setup({
@@ -504,7 +531,6 @@ require("lazy").setup({
       })
     end,
   },
-
   -- LSP
   {
     'VonHeikemen/lsp-zero.nvim',
@@ -516,7 +542,6 @@ require("lazy").setup({
       vim.g.lsp_zero_extend_lspconfig = 0
     end,
   },
-
   -- Mason LSP server manager
   {
     'williamboman/mason.nvim',
@@ -525,16 +550,8 @@ require("lazy").setup({
       registries = {
         'github:mason-org/mason-registry',
       },
-      ui = {
-        icons = {
-          package_installed = "✓",
-          package_pending = "➜",
-          package_uninstalled = "✗"
-        }
-      }
     },
   },
-
   -- Snippet engine
   {
     "L3MON4D3/LuaSnip",
@@ -601,7 +618,6 @@ require("lazy").setup({
   config = function()
     local cmp = require('cmp')
     local luasnip = require('luasnip')
-
     cmp.setup({
       snippet = {
         expand = function(args)
@@ -644,7 +660,6 @@ require("lazy").setup({
             fallback()
           end
         end, { "i", "s" }),
-
         -- Enter: Always confirm CMP selection if visible
         ["<CR>"] = cmp.mapping({
           i = function(fallback)
@@ -657,12 +672,10 @@ require("lazy").setup({
           s = cmp.mapping.confirm({ select = true }),
           c = cmp.mapping.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }),
         }),
-        
         -- Shift-Enter: Insert newline
         ["<S-CR>"] = cmp.mapping(function(fallback)
           fallback()
         end, { "i", "s" }),
-        
         -- Ctrl-Space: Manually trigger completion
         ["<C-Space>"] = cmp.mapping.complete(),
       }),
@@ -677,7 +690,7 @@ require("lazy").setup({
     
     end,
   },
-    -- LSP
+	-- LSP
   {
     'neovim/nvim-lspconfig',
     cmd = {'LspInfo', 'LspInstall', 'LspStart'},
@@ -691,18 +704,42 @@ require("lazy").setup({
       lsp_zero.extend_lspconfig()
 
       lsp_zero.on_attach(function(client, bufnr)
-        lsp_zero.default_keymaps({buffer = bufnr})
-        vim.keymap.set('n', 'T', '<cmd>lua vim.lsp.buf.hover({ buffer = "rounded" })<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '<LEADER>dd', ':lua vim.diagnostic.open_float(0, {scope="line"})<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '<LEADER>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '<LEADER>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '<LEADER>fd', '<cmd>lua vim.lsp.buf.definition()<CR>', {buffer = bufnr})
-				vim.keymap.set("n", "<LEADER>=", vim.diagnostic.goto_next)
-				vim.keymap.set("n", "<LEADER-", vim.diagnostic.goto_prev)
+				vim.keymap.set('n', 'T', function() vim.lsp.buf.hover() end, { buffer = bufnr })
+        local diag_group = vim.api.nvim_create_augroup('DiagnosticHover_' .. bufnr, { clear = true })
+        local diag_dismissed = false
+        vim.api.nvim_create_autocmd('CursorMoved', {
+          group = diag_group,
+          buffer = bufnr,
+          callback = function() diag_dismissed = false end,
+        })
+        vim.api.nvim_create_autocmd('CursorHold', {
+          group = diag_group,
+          buffer = bufnr,
+          callback = function()
+            if diag_dismissed then return end
+            local _, winid = vim.diagnostic.open_float(nil, { focusable = false, scope = 'cursor' })
+            if not winid then return end
+            vim.keymap.set('n', 'q', function()
+              diag_dismissed = true
+              pcall(vim.api.nvim_win_close, winid, true)
+              pcall(vim.keymap.del, 'n', 'q', { buffer = bufnr })
+            end, { buffer = bufnr })
+            vim.api.nvim_create_autocmd('WinClosed', {
+              pattern = tostring(winid),
+              once = true,
+              callback = function()
+                pcall(vim.keymap.del, 'n', 'q', { buffer = bufnr })
+              end,
+            })
+          end,
+        })
+        vim.keymap.set('n', '<Leader>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<Leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', {buffer = bufnr})
+        vim.keymap.set('n', '<Leader>gd', '<cmd>lua vim.lsp.buf.definition()<CR>', {buffer = bufnr})
+				vim.keymap.set("n", "<Leader>=", function() vim.diagnostic.jump({ count = 1, float = true }) end)
+				vim.keymap.set("n", "<Leader>-", function() vim.diagnostic.jump({ count = -1, float = true }) end)
       end)
-
       vim.diagnostic.config({virtual_text = false})
-
       lsp_zero.set_sign_icons({
         error = '✘',
         warn = '▲',
@@ -717,7 +754,6 @@ require("lazy").setup({
       })
     end
   },
-
   -- Formatter
   {
     'stevearc/conform.nvim',
@@ -749,12 +785,6 @@ require("lazy").setup({
       })
     end,
   },
-   -- Comment box
-  {
-    "LudoPinelli/comment-box.nvim",
-    cmd = { "CBccbox", "CBacbox", "CBllbox", "CBlcbox" },
-  },
-
   -- Smart splits for window resizing
   {
     'mrjones2014/smart-splits.nvim',
@@ -765,7 +795,6 @@ require("lazy").setup({
       { '<right>', function() require('smart-splits').resize_right() end, desc = "Resize right" },
     },
   },
-
   -- GitHub Copilot LSP
   {
     "zbirenbaum/copilot.lua",
@@ -797,112 +826,7 @@ require("lazy").setup({
       })
     end,
   },
-  -- Iron.nvim to run REPL
-  {"Vigemus/iron.nvim",
-		ft = { "python", "sh", "r", "rmd", "quarto" },
-    config = function()
-      local iron = require("iron.core")
-      local view = require("iron.view")
-      local common = require("iron.fts.common")
-      iron.setup {
-        config = {
-          scratch_repl = true,
-          repl_definition = {
-            sh = {
-              command = {"zsh"}
-            },
-            python = {
-              command = { "python3" },  -- or { "ipython", "--no-autoindent" }
-              format = common.bracketed_paste_python,
-              block_dividers = { "# %%", "#%%" },
-              env = {PYTHON_BASIC_REPL = "1"} --this is needed for python3.13 and up.
-            }
-          },
-          repl_filetype = function(bufnr, ft)
-            return ft
-          end,
-          dap_integration = true,
-          repl_open_cmd = view.split.vertical("30%")
-        },
-        highlight = {
-          italic = true
-        },
-        ignore_blank_lines = true, -- ignore blank lines when sending visual select lines
-      }
-      
-      -- Set up keymaps manually to ensure leader key works properly
-      vim.keymap.set("n", "<leader>rr", function() iron.send_line() end, { desc = "Iron send motion" })
-      vim.keymap.set("v", "<leader>rr", function() iron.visual_send() end, { desc = "Iron visual send" })
-      vim.keymap.set("n", "<leader>rc", function() iron.send(nil, string.char(12)) end, { desc = "Iron clear REPL" })
-      vim.keymap.set("n", "<leader>rf", function() iron.send_file() end, { desc = "Iron send motion" })
-    end,
-  },
-
-	-- Quarto support
-  {
-    "quarto-dev/quarto-nvim",
-    dependencies = {
-      "jmbuhr/otter.nvim",
-      "nvim-treesitter/nvim-treesitter",
-    },
-    ft = { "quarto" },
-    config = function()
-      require('quarto').setup{
-        debug = false,
-        closePreviewOnExit = true,
-        lspFeatures = {
-          enabled = true,
-          chunks = "curly",
-          languages = { "r", "python", "julia", "bash", "html" },
-          diagnostics = {
-            enabled = true,
-            triggers = { "BufWritePost" },
-          },
-          completion = {
-            enabled = true,
-          },
-        },
-        codeRunner = {
-          enabled = true,
-          default_method = "iron", 
-          ft_runners = {},
-          never_run = { 'yaml' },
-        },
-      }
-      -- Quarto runner keymaps
-      local runner = require("quarto.runner")
-      vim.keymap.set("n", "<localleader>rc", runner.run_cell,  { desc = "run cell", silent = true })
-      vim.keymap.set("n", "<localleader>ra", runner.run_above, { desc = "run cell and above", silent = true })
-      vim.keymap.set("n", "<localleader>rA", runner.run_all,   { desc = "run all cells", silent = true })
-      vim.keymap.set("n", "<localleader>rl", runner.run_line,  { desc = "run line", silent = true })
-      vim.keymap.set("v", "<localleader>rv",  runner.run_range, { desc = "run visual range", silent = true })
-    end,
-  },
-	{
-    'jmbuhr/otter.nvim',
-    dependencies = {
-      'nvim-treesitter/nvim-treesitter',
-    },
-		ft = { "quarto" },
-    config = function()
-      require('otter').setup({
-        lsp = {
-          hover = {
-            border = 'rounded',
-          },
-          completion = {
-            border = 'rounded',
-          },
-        },
-        buffers = {
-          set_filetype = true,
-        },
-        handle_leading_whitespace = true,
-      })
-    end,
-	},
 })
-
 -- Language support autocmds
 vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
   pattern = { "*.js", "*.jsx", "*.ts", "*.tsx" },
@@ -915,21 +839,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
   end,
 })
 
--- Activate Otter for Quarto files
-vim.api.nvim_create_autocmd('BufReadPost', {
-  pattern = '*.qmd',
-  callback = function()
-    vim.defer_fn(function()
-      require('otter').activate()
-    end, 100)
-  end,
-  desc = "Activate Otter for Quarto files"
-})
-
-
-
 local yank = require 'custom.yank'
-
 -- Normal mode: yank file path
 vim.keymap.set('n', '<leader>ya', function()
   yank.yank_path(yank.get_buffer_absolute(), 'absolute')
