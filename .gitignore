@@ -2,8 +2,10 @@
 ns/
 autoload/
 plugged/*
+spell/
 tmp/
 .netrwhist
 .vim-bookmarks
 _machine_specific.vim
-spell/
+.DS_Store
+.claude/
