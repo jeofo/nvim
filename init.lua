@@ -9,7 +9,8 @@ vim.opt.cmdheight = 0
 vim.opt.softtabstop = 2
 vim.opt.autoindent = true
 vim.opt.list = true
-vim.opt.listchars = { tab = '▸ ', trail = '·', nbsp = '␣', extends = '»', precedes = '«', eol = '↲' }
+vim.opt.listchars = { tab = '▸ ', trail = '·', nbsp = '␣', extends = '»', precedes
+  = '«' }
 vim.opt.scrolloff = 4
 vim.opt.ttimeoutlen = 0
 vim.opt.viewoptions = 'cursor,folds,slash,unix'
@@ -44,12 +45,12 @@ vim.opt.clipboard = 'unnamedplus'
 
 -- Auto-reload files when they change externally
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
-  command = "checktime",
+	command = "checktime",
 })
 
 -- Clear jumplist on startup (don't persist across sessions)
 vim.api.nvim_create_autocmd('VimEnter', {
-  callback = function() vim.cmd('clearjumps') end,
+	callback = function() vim.cmd('clearjumps') end,
 })
 
 -- Persistent Undo
@@ -252,11 +253,14 @@ require("lazy").setup({
   {
     "catppuccin/nvim", 
     name = "catppuccin", 
-    priority = 1000,
     config = function()
       vim.cmd('colorscheme catppuccin-mocha')
     end
   },
+	{"vague-theme/vague.nvim",  
+    name = "vague", 
+    priority = 1000,
+	},
   -- File explorer, load on startup
 	{
 		"nvim-tree/nvim-tree.lua",
